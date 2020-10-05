@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+
+{% block title %} 
+<div class="container">
+  <div class="row">
+    <div class="col">
+      PolyGEN Manual
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<style>
+
+  #code {
+	margin-left: auto;
+	margin-right: auto;
+	background-color: #F2F2F2;
+	margin-bottom: 0.5cm;
+	border-radius: 5px;
+	border-style: solid;
+	border-width: 1px;
+	padding: 5px 10px 5px 10px
+  }
+</style>
+
+<div class="container">
+  <div class="row">
+    <hr style="width:100%;height:1px;border-width:0;color:gray;background-color:gray">
+    PolyGEN a tool for automatic PTG design to enable an easy use of polycistronic elements for any other setup profiting from polycistron-produced RNAs.
+    <hr style="width:100%;height:1px;border-width:0;color:gray;background-color:gray">
+  </div>
+
+  <div class="row justify-content-md-center">
+    <div class="col-md-10">
+      <h1 style="color:#2A65AF;">PTG Design Manual</h1>
+
+      <p>
+      The PTG function offers design automation of polycistronic tRNA-based genes containing custom RNAs for assembly in BsaI-driven Golden Gate experiments. The backbone of the PTG design is based on <a href="https://ibiocad.igb.illinois.edu/">iBioCAD</a> by Scott Weisberg in HamediRad et al. (2019), for which the code is openly available through <a href="https://github.com/scottweis1/iBioCAD">Github</a>.
+      </p>
+
+      <p>
+      To use the PTG design function of PolyGEN, the user must provide a list of the desired custom RNAs to be included in the finished polycistron of the form:
+      </p>
+
+      <div class="row  justify-content-md-center">
+        <div class="col-md-4" id=code>
+        type0;sequence0|type1;sequence1|type2; sequence2 ...
+        </div>
+      </div>
+
+      <p>
+      where 'type' is the type of RNAs, which the part belongs to ('gRNA', 'pegRNA' or 'smRNA') and 'sequence' is the entire sequence of the part in 5' -> 3' direction. Note that 'type' can at this point only be one of the three listed options. Other inputs will lead to errors. An exemplary input would be:
+      </p>
+
+      <div class="row  justify-content-md-center">
+        <div class="col-md-4" id=code>
+          gRNA;ACGTACGT...|pegRNA;ACGTACG T...
+        </div>
+      </div>
+
+      <p>
+      From this, it will construct the finished polycistron and calculate all oligomers necessary to produce each singular part via PCR with a plasmid containing a gRNA-tRNA template. The produced parts can then be assembled by Golden Gate. Currently, the produced PTGs can include sgRNAs, pegRNAs and other small RNAs. By default, PolyGEN will use the following parameters, which will be adjustable in future updates:
+      </p>
+
+      <p>
+      <ul >
+      <li> primer melting temperature between 52 and 72 °C if possible </li>
+      <li> primer annealing length on template between 18 and 30 nt </li>
+      <li> 'tgcc' and 'gttt' as BsaI restriction overlaps with the vector plasmid</li>
+      <li> no additional BsaI restriction sites in the vector plasmid</li>
+      </ul>
+      </p>
+
+      <p>
+      To calculate the primer melting temperatures, PolyGEN uses the same method and parameters as Benchling: <a href="https://www.pnas.org/content/95/4/1460">SantaLucia (1998)</a>.
+      </p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

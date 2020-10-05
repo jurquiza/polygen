@@ -1,0 +1,8 @@
+[I 07:31:18.606 LabApp] Writing notebook server cookie secret to /root/.local/share/jupyter/runtime/notebook_cookie_secret
+[W 07:31:18.975 LabApp] All authentication is disabled.  Anyone who can connect to this server will be able to run code.
+[I 07:31:18.982 LabApp] JupyterLab extension loaded from /usr/local/lib/python3.6/dist-packages/jupyterlab
+[I 07:31:18.982 LabApp] JupyterLab application directory is /usr/local/share/jupyter/lab
+[I 07:31:18.985 LabApp] Serving notebooks from local directory: /scripts
+[I 07:31:18.985 LabApp] Jupyter Notebook 6.1.4 is running at:
+[I 07:31:18.985 LabApp] http://b7b6802d30c6:8888/
+[I 07:31:18.985 LabApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
