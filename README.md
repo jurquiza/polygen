@@ -16,3 +16,10 @@ To calculate the primer melting temperatures, PolyGEN uses the same method and p
 PolyGEN can be accessed as a webapp:
 
 CRISPR and small RNA technologies 
+
+Install instructions 
+- install docker and docker-compose 
+- clone repository git clone https://github.com/jurquiza/polygen.git
+- on the terminal set working directory to polygen 
+- then type docker-compose up
+- after installation is complete go in the browser to http://localhost:5000/
