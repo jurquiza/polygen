@@ -1,0 +1,9 @@
+version: '3.8'
+services:
+  polygen:
+    build: .
+    image: uurquizag/polygen:a0.1
+    ports:
+      - "5000:8080"
+    environment:
+      - PORT=8080

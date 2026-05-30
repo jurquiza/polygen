@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %} Polycistronic RNA production <span class="tool-status tool-status-tested">tested</span> {% endblock %}
+
+{% block content %}
+
+<div class="container">
+<form action='#' method='post'>
+  <div class="row">
+    <div class="col">
+      <div class="text-center">
+        {% if session['msg'] %}
+          <p style="color: #FA5858; font-weight:bold">{{ session['msg'] }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div style="background-color: #EFF5FB; border-radius: 5px; padding: 10px">
+  <div class="row">
+    <div class="col-6">
+      <div class="form-group">
+        <label for="ControlInput1">Polycistron Name</label>
+        <span class="fa fa-info-circle" data-toggle='tooltip' title="Insert a meaningful identifier for your polycistron here. The name will be propagated to the results. If nothing is specified, this will default to 'PTG'".></span>
+        <input type="text" name="PTG_name" class="form-control" id="ControlInput1" placeholder="e.g. pegUU" value="{{ session['PTG_name'] }}" style="background-color:{{ session['clr']['PTG_name'] }}">
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="form-group">
+        <label for="ControlInput2">Oligos prefix</label>
+        <span class="fa fa-info-circle" data-toggle='tooltip' title="Specify a prefix for your generated oligos here. This can be your initials. The oligos will receive successive numbering with this prefix. If nothing is specified, this will default to 'o'."></span>
+        <input type="text" name="oligo_prefix" class="form-control" id="ControlInput2" placeholder="e.g. oUU" value="{{ session['oligo_prefix'] }}">
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="form-group">
+        <label for="Input_oli_index">Starting index</label>
+        <span class="fa fa-info-circle" data-toggle='tooltip' title="Specify the starting index of your successive oligo numbering here. If nothing is specified, this will default to 0."></span>
+        <input type="text" name="oligo_index" class="form-control" id="Input_oli_index" placeholder="e.g. 0291" value="{{ session['oligo_index'] }}" style="background-color:{{ session['clr']['oligo_index'] }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-2">
+      <div class="form-group">
+        <label for="ControlInputbb">Border linkers</label>
+        <span class="fa fa-info-circle" data-toggle='tooltip' title="Specify the 4 bp linkers from BsaI digestion, which should flank the polycistron in your destination plasmid."></span>
+        <input type="text" name="bb_linkers" class="form-control" id="ControlInputbb" placeholder="tgcc;gttt" value="{{ session['bb_linkers'] }}" style="background-color:{{ session['clr']['link'] }}">
+      </div>
+    </div>
+    <div class="col-2">
+      <div class="form-group">
+        <label for="ControlInputAdd">Additional linkers</label>
+        <span class="fa fa-info-circle" data-toggle='tooltip' title="Specify any additional 4 bp BsaI linkers apart from the border linkers, which exist in your destination plasmid."></span>
+        <input type="text" name="ad_linkers" class="form-control" id="ControlInputAdd" placeholder="None" value="{{ session['ad_linkers'] }}" style="background-color:{{ session['clr']['link'] }}">
+      </div>
+    </div> 
+    <div class="col-2">
+      <div class="form-group">
+        <label for="poltype_input">Polycistron type</label>
+        <span class="fa fa-info-circle" data-toggle='tooltip' title="Choose PTG for tRNA-processed gRNAs/small RNAs, CA for Cpf1 direct-repeat crRNAs, or tigRNA for TIGR-Tas mature tigRNAs without added tRNAs."></span>
+        <select name="poltype_input" id="poltype_input" class="form-control" style="background-color:{{ session['clr']['poltype_input'] }}" onchange="updateBorderReuse()">
+          <option value="ptg" {% if session['poltype'] == 'ptg' %}selected="selected"{% endif %}>PTG</option>
+          <option value="ca" {% if session['poltype'] == 'ca' %}selected="selected"{% endif %}>CA</option>
+          <option value="tigRNA" {% if session['poltype'] == 'tigRNA' %}selected="selected"{% endif %}>tigRNA</option>
+        </select>
+      </div>
+    </div>
+    <div class="col-2">
+      <div class="form-group">
+        <label for="enzm_input">Enzyme</label>
+        <span class="fa fa-info-circle" data-toggle='tooltip' title="Specify the type II restriction enzyme you want to use for the Golden Gate assembly. This will be important for designing the primers for PCR. The default is BsaI."></span>
+        <select name="enzm_input" id="enzm_input" class="form-control" onclick="update()">
+          <option value="bbsi" selected>BbsI</option>
+          <option value="bsai">BsaI </option>
+          <option value="bsmbi">BsmBI</option>
+          <option value="btgzi">BtgZI</option>
+        </select>
+      </div>
+    </div>
+    <script>
+      function update() {
+        var enzms = {'bsai': ['GA<b>GGTCTC</b>G', 'CT<b>CCAGAG</b>C'], 'bsmbi': ['TG<b>CGTCTC</b>A', 'AC<b>GCAGAG</b>T'], 'btgzi': ['CT<b>GCGATG</b>GAGTATGTTA', 'GA<b>CGCTAC</b>CTCATACAAT'], 'bbsi': ['TT<b>GAAGAC</b>TT', 'AA<b>CTTCTG</b>AA']};
+        
+        var res = enzms[document.getElementById('enzm_input').value][0] + 'NNNN <br>' + enzms[document.getElementById('enzm_input').value][1] + 'NNNN';
+        
+        document.getElementById("site").innerHTML = res;
+      }
+    </script>
+    <div class="col-4 d-flex justify-content-center align-items-center">
+      <div style="position: relative">
+        <p id="site" style="font-family: monospace; letter-spacing: 3px">
+        <script>
+          var enzms = {'bsai': ['GA<b>GGTCTC</b>G', 'CT<b>CCAGAG</b>C'], 'bsmbi': ['TG<b>CGTCTC</b>A', 'AC<b>GCAGAG</b>T'], 'btgzi': ['CT<b>GCGATG</b>GAGTATGTTA', 'GA<b>CGCTAC</b>CTCATACAAT'], 'bbsi': ['TT<b>GAAGAC</b>TT', 'AA<b>CTTCTG</b>AA']};
+          
+          var res = enzms[document.getElementById('enzm_input').value][0] + 'NNNN <br>' + enzms[document.getElementById('enzm_input').value][1] + 'NNNN';
+          
+          document.getElementById("site").innerHTML = res;
+        </script>
+        </p>
+        <canvas id="DemoCanvas" width="53" height="46" style="position: absolute; top: 0; right: 0;"></canvas>
+        <script>  
+          var canvas = document.getElementById('DemoCanvas');
+          if (canvas.getContext) {
+            var context = canvas.getContext('2d');
+  
+            context.beginPath(); 
+  
+            context.lineWidth = 2;
+            context.moveTo(0,0);
+            context.lineTo(0,23);
+            context.lineTo(53,23);
+            context.lineTo(53,46);
+
+            context.stroke();
+          }
+        </script>   
+      </div>
+    </div>
+  </div>
+  
+  <hr>
+
+  <div class="row align-items-center">
+    <div class="col-md-8">
+      <div class="form-group">
+        <label for="noBorderPrimers">Reuse PTG border oligos</label>
+        <span class="fa fa-info-circle" data-toggle='tooltip' title="Use reusable default border oligos for PTG/Cas9 tRNA-processed assemblies. These border oligos are specific to the selected enzyme and border linkers. CA and tigRNA assemblies do not use tRNAs, so PolyGEN always designs new target-specific border oligos for those modes."></span>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <input type="checkbox" name="noBorderPrimers" id="noBorderPrimers" value=True>
+    </div>
+  </div>
+  
+  <hr>
+  
+  <div class="row">
+    <div class="col-12">
+      <div class="form-group">
+        <label for="ControlTextarea1">Polycistron description (required)</label>
+        <span class="fa fa-info-circle" data-toggle='tooltip' title="Specify the contents of your polycistron here. First state the RNA type, followed by a semicolon and sequence. Separate parts by a vertical line. Use tigRNA;sequence with the tigRNA polycistron type."></span>
+        <p style="font-family: monospace; color: grey">
+        This is a functional example: gRNA;ATAGGCTCCGATCGTGAACC|gRNA;GGAATTTGGCGAGGCCTATT|smRNA;CGTATGGCGTATCGGATTCTAT<br>
+        tigRNA mode example: tigRNA;TGAAAGATCGTACCCAATGGAATGTACCGATTTCCA|tigRNA;TGAAAGTACCGATCCAATGGAATGATCGTACTTCCA<br>
+        This will produce an error: smRNA;TTGAAGTAAATACAAACAGG|gRNA;TTGTATCAAAAATGCAAGCT|gRNA;TTTTAGTAACAATAAGAGAG</p>
+        {% if session['PTG_transfer'] %}
+            <textarea class="form-control" name="sequence_spacers" id="ControlTextarea3" rows="5" placeholder='e.g. pegRNA;ATGCATGC|gRNA;ATGCATGC|smRNA;ATGCATGC' style="background-color:{{ session['clr']['sequence_spacers'] }}">{{ session['PTG_transfer'] }}</textarea>
+        {% else %}
+            <textarea class="form-control" name="sequence_spacers" id="ControlTextarea3" rows="5" placeholder='e.g. pegRNA;ATGCATGC|gRNA;ATGCATGC|smRNA;ATGCATGC' style="background-color:{{ session['clr']['sequence_spacers'] }}"></textarea>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <div class="form-group">
+        <button type="submit" name="submitPTG" class="btn btn-primary" value="submit">Submit</button>
+      </div>
+    </div>
+    <div class="col">
+      <div class="form-group">
+        <div class="text-right">
+          <button type="submit" name="submitPTG" class="btn btn-outline-secondary" value="reset" style="background-color: #FFFFFF">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</form>
+</div>
+
+<script>
+function updateBorderReuse() {
+  var poltype = document.getElementById('poltype_input');
+  var reuseBorders = document.getElementById('noBorderPrimers');
+  if (!poltype || !reuseBorders) {
+    return;
+  }
+  var disabled = poltype.value !== 'ptg';
+  reuseBorders.disabled = disabled;
+  if (disabled) {
+    reuseBorders.checked = false;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', updateBorderReuse);
+</script>
+
+{% endblock %}

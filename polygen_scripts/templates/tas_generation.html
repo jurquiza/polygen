@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %} TasA/TasH tigRNA design <span class="tool-status tool-status-alpha">alpha</span> {% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col">
+      <div class="text-center">
+        {% if session['msg'] %}
+          <p style="color: #FA5858; font-weight:bold">{{ session['msg'] }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div style="background-color: #EFF5FB; border-radius: 5px; padding: 10px">
+    <form action='#' method='post'>
+      <div class="form-group">
+        <label for="exactSpacer">Exact target windows for multiplexing</label>
+        <span class="fa fa-info-circle" data-toggle='tooltip' title="Paste one or more exact target windows. Separate entries with new lines, spaces, commas, semicolons, or vertical bars. TasA expects 18 bp per entry; TasH expects 16 bp per entry."></span>
+        <textarea name="exact_spacer" class="form-control" id="exactSpacer" rows="5" placeholder="TasA: one 18 bp target per line; TasH: one 16 bp target per line" style="background-color:{{ session['clr']['exact_spacer'] }}">{{ session['TAS_exact_spacer'] }}</textarea>
+      </div>
+
+      <div class="row">
+        <div class="col-2">
+          <label for="tasSystem">System</label>
+          <span class="fa fa-info-circle" data-toggle='tooltip' title="TasA uses two 9 nt spacers; TasH uses two 8 nt spacers."></span><br>
+          <select name="system" id="tasSystem" onchange="setSystemDefaults(this.value)">
+            <option value="TasH" {% if session['TAS_system'] == 'TasH' %}selected="selected"{% endif %}>TasH</option>
+            <option value="TasA" {% if session['TAS_system'] == 'TasA' %}selected="selected"{% endif %}>TasA</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row mt-3">
+        <div class="col-3">
+          <label for="edge5">5' edge repeat fragment</label>
+          <span class="fa fa-info-circle" data-toggle='tooltip' title="Locus-specific tigRNA scaffold before spacer A. DNA or RNA bases accepted."></span>
+          <input type="text" name="edge_5" class="form-control" id="edge5" value="{{ session['TAS_edge_5'] }}" style="background-color:{{ session['clr']['scaffold'] }}">
+        </div>
+        <div class="col-6">
+          <label for="loop">Loop repeat</label>
+          <span class="fa fa-info-circle" data-toggle='tooltip' title="Locus-specific tigRNA loop repeat between spacer A and spacer B. The scaffold plus both spacers must total 36 nt."></span>
+          <input type="text" name="loop" class="form-control" id="loop" value="{{ session['TAS_loop'] }}" style="background-color:{{ session['clr']['scaffold'] }}">
+        </div>
+        <div class="col-3">
+          <label for="edge3">3' edge repeat fragment</label>
+          <input type="text" name="edge_3" class="form-control" id="edge3" value="{{ session['TAS_edge_3'] }}" style="background-color:{{ session['clr']['scaffold'] }}">
+        </div>
+      </div>
+
+      <div class="row mt-3">
+        <div class="col">
+          <button type="submit" name="submitTAS" class="btn btn-primary" value="submit">Design guides</button>
+        </div>
+        <div class="col">
+          <div class="text-right">
+            <button type="submit" name="submitTAS" class="btn btn-outline-secondary" value="reset" style="background-color: #FFFFFF">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      {% if session['TAS_guides'] %}
+        <hr class="my-4">
+        <div class="row">
+          <div class="col">
+            <button type="submit" name="submitTAS" class="btn btn-success" value="send_ptg">Send selected to tigRNA assembly</button>
+          </div>
+        </div>
+        <div class="table-responsive mt-3">
+          <table class="table table-striped table-sm">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Name</th>
+                <th>Strand</th>
+                <th>Source</th>
+                <th>GC %</th>
+                <th>Spacer A</th>
+                <th>Spacer B</th>
+                <th>tigRNA</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for guide in session['TAS_guides'] %}
+              <tr>
+                <td><input type="checkbox" name="selected_guides" value="{{ guide['name'] }}" checked="checked"></td>
+                <td>{{ guide['name'] }}</td>
+                <td>{{ guide['strand'] }}</td>
+                <td>{{ guide['source'] }}</td>
+                <td>{{ guide['gc'] }}</td>
+                <td>{{ guide['spacer_a'] }}</td>
+                <td>{{ guide['spacer_b'] }}</td>
+                <td style="font-family: monospace">{{ guide['tigRNA'] }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<script>
+  var tasDefaults = {
+    "TasA": {
+      "edge_5": "{{ tas_systems['TasA']['edge_5'] }}",
+      "loop": "{{ tas_systems['TasA']['loop'] }}",
+      "edge_3": "{{ tas_systems['TasA']['edge_3'] }}"
+    },
+    "TasH": {
+      "edge_5": "{{ tas_systems['TasH']['edge_5'] }}",
+      "loop": "{{ tas_systems['TasH']['loop'] }}",
+      "edge_3": "{{ tas_systems['TasH']['edge_3'] }}"
+    }
+  };
+
+  function setSystemDefaults(system) {
+    $('#edge5').val(tasDefaults[system]['edge_5']);
+    $('#loop').val(tasDefaults[system]['loop']);
+    $('#edge3').val(tasDefaults[system]['edge_3']);
+  };
+</script>
+
+{% endblock %}

@@ -1,0 +1,8 @@
+.venv
+__pycache__
+*.pyc
+.git
+polygen_scripts/__pycache__
+polygen_scripts/build
+polygen_scripts/source
+polygen_scripts/testing

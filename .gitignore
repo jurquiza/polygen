@@ -1,0 +1,16 @@
+# Ignore the following directories #
+.venv/
+polygen_scripts/__pycache__/
+polygen_scripts/testing/__pycache__/
+polygen_scripts/.ipynb_checkpoints/
+polygen_scripts/build/
+polygen_scripts/static/build/.doctrees/
+polygen_scripts/static/build/doctrees/
+polygen_scripts/build/.doctrees/
+
+# Ignore all files with the following endings #
+.pyc
+.DS_Store
+
+# Ignore the following files
+log.out
