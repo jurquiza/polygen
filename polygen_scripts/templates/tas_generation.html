@@ -14,7 +14,7 @@
     </div>
   </div>
 
-  <div style="background-color: #EFF5FB; border-radius: 5px; padding: 10px">
+  <div class="form-panel">
     <form action='#' method='post'>
       <div class="form-group">
         <label for="exactSpacer">Exact target windows for multiplexing</label>
@@ -23,7 +23,7 @@
       </div>
 
       <div class="row">
-        <div class="col-2">
+        <div class="col-12 col-sm-6 col-md-2">
           <label for="tasSystem">System</label>
           <span class="fa fa-info-circle" data-toggle='tooltip' title="TasA uses two 9 nt spacers; TasH uses two 8 nt spacers."></span><br>
           <select name="system" id="tasSystem" onchange="setSystemDefaults(this.value)">
@@ -34,17 +34,17 @@
       </div>
 
       <div class="row mt-3">
-        <div class="col-3">
+        <div class="col-12 col-md-3">
           <label for="edge5">5' edge repeat fragment</label>
           <span class="fa fa-info-circle" data-toggle='tooltip' title="Locus-specific tigRNA scaffold before spacer A. DNA or RNA bases accepted."></span>
           <input type="text" name="edge_5" class="form-control" id="edge5" value="{{ session['TAS_edge_5'] }}" style="background-color:{{ session['clr']['scaffold'] }}">
         </div>
-        <div class="col-6">
+        <div class="col-12 col-md-6">
           <label for="loop">Loop repeat</label>
           <span class="fa fa-info-circle" data-toggle='tooltip' title="Locus-specific tigRNA loop repeat between spacer A and spacer B. The scaffold plus both spacers must total 36 nt."></span>
           <input type="text" name="loop" class="form-control" id="loop" value="{{ session['TAS_loop'] }}" style="background-color:{{ session['clr']['scaffold'] }}">
         </div>
-        <div class="col-3">
+        <div class="col-12 col-md-3">
           <label for="edge3">3' edge repeat fragment</label>
           <input type="text" name="edge_3" class="form-control" id="edge3" value="{{ session['TAS_edge_3'] }}" style="background-color:{{ session['clr']['scaffold'] }}">
         </div>

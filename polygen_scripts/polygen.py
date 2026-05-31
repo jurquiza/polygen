@@ -13,7 +13,7 @@ from engine import *
 
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'ee839687a282e6493054c86e00e86925dc04de931acf4aed')
+app.secret_key = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
 _SESSION_STORE = {}

@@ -66,10 +66,14 @@ docker build -t polygen:test .
 docker run --rm -p 5000:8080 -e PORT=8080 polygen:test
 ```
 
-For a Cloud Run test deployment from the repository root:
+For a constrained Cloud Run demo deployment, run from the repository root and
+verify that `Dockerfile` is listed before deploying. If Cloud Run says it is
+"Building using Buildpacks", rerun the command from the directory containing
+`Dockerfile`.
 
 ```bash
-gcloud run deploy polygen-test --source . --allow-unauthenticated --max-instances=1
+ls Dockerfile
+gcloud run deploy polygen-v1-demo --source . --region=europe-west3 --allow-unauthenticated --min-instances=0 --max-instances=1 --concurrency=10 --cpu=1 --memory=512Mi --timeout=120 --set-env-vars SECRET_KEY=<new_secret>
 ```
 
 For a public test service, set a real `SECRET_KEY` environment variable in the
