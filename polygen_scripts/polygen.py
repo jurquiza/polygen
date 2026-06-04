@@ -353,6 +353,7 @@ def serve_primers():
     csv += 'Melting temperature range:,' + str(session['tm_range'][0]) + '-' + str(session['tm_range'][1]) + '\n'
     csv += 'Overhang selection mode:,' + getattr(session['plcstrn'], 'overhang_selection_mode', 'optimal') + '\n'
     csv += 'Selected overhangs:,' + '+'.join(getattr(session['plcstrn'], 'selected_overhangs', [])) + '\n'
+    csv += 'Fill-in overlap Tm values:,' + '+'.join([str(round(tm, 1)) for tm in getattr(session['plcstrn'], 'fill_in_overlap_tms', [])]) + '\n'
     csv += 'Overhang warning:,' + getattr(session['plcstrn'], 'overhang_warning', '') + '\n'
     csv += 'Invariable border primers:,' + str(session['staticBorderPrimers']) + '\n'
     csv += 'Omit border primers:,' + str(session['noBorderPrimers']) + '\n'
@@ -369,6 +370,8 @@ def serve_primers():
                                   qualifiers={'label': session['PTG_name'] + ' array purpose',
                                               'note': 'PolyGEN array purpose: ' + array_annotation}))
     overhang_note = 'PolyGEN overhang selection mode: ' + getattr(session['plcstrn'], 'overhang_selection_mode', 'optimal') + '; selected overhangs=' + ','.join(getattr(session['plcstrn'], 'selected_overhangs', []))
+    if getattr(session['plcstrn'], 'fill_in_overlap_tms', []):
+        overhang_note += '; fill-in overlap Tm values=' + ','.join([str(round(tm, 1)) for tm in getattr(session['plcstrn'], 'fill_in_overlap_tms', [])])
     if getattr(session['plcstrn'], 'overhang_warning', ''):
         overhang_note += '; ' + getattr(session['plcstrn'], 'overhang_warning', '')
     sr.features.append(SeqFeature(FeatureLocation(0, len(session['plcstrn'].sequence), strand=1),
@@ -386,6 +389,7 @@ def serve_primers():
     gb_json['overhang_selection_mode'] = getattr(session['plcstrn'], 'overhang_selection_mode', 'optimal')
     gb_json['overhang_warning'] = getattr(session['plcstrn'], 'overhang_warning', '')
     gb_json['selected_overhangs'] = getattr(session['plcstrn'], 'selected_overhangs', [])
+    gb_json['fill_in_overlap_tms'] = getattr(session['plcstrn'], 'fill_in_overlap_tms', [])
     
     ## Writing everything to a zip file
     in_memory = BytesIO()

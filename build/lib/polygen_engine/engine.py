@@ -138,8 +138,7 @@ def polyToJson(poly):
         "warning": p.warning,
         "overhang_selection_mode": getattr(p, 'overhang_selection_mode', 'optimal'),
         "overhang_warning": getattr(p, 'overhang_warning', ''),
-        "selected_overhangs": getattr(p, 'selected_overhangs', []),
-        "fill_in_overlap_tms": getattr(p, 'fill_in_overlap_tms', [])
+        "selected_overhangs": getattr(p, 'selected_overhangs', [])
     }
 
 def reverse_complement(sequence):
@@ -265,7 +264,6 @@ PBS_MIN_LEN = 8
 PBS_MAX_LEN = 17
 PEG_PBS_LENGTHS = {}
 TIGRNA_MIN_SPLIT_LEN = 12
-MIN_FILL_IN_OVERLAP_TM = 45
 TAS_SYSTEMS = {
     'TasA': {
         'spacer_len': 9,
@@ -645,81 +643,6 @@ def primer_pair_overlap_tm(forward_primer, reverse_primer):
         return 0
     return mt.Tm_NN(overlap, nn_table=mt.DNA_NN3, dnac1=125, dnac2=125, Na=50)
 
-
-def sequence_overlap_tm(seq_a, seq_b):
-    '''Calculates Tm for the longest shared sequence between two same-strand oligo cores.'''
-
-    overlap = longest_common_substring(seq_a.lower(), seq_b.lower())
-    if overlap == '':
-        return 0
-    return mt.Tm_NN(overlap, nn_table=mt.DNA_NN3, dnac1=125, dnac2=125, Na=50)
-
-
-def overhang_combination_overlap_tms(parts_list, comb, poltype_opt='ptg', max_ann_len=30, enzm='bsai', bb_linkers=['tgcc','gttt']):
-    '''
-    Estimates fill-in overlap Tm values produced by an internal overhang choice.
-
-    CA and tigRNA oligo-extension fragments are short enough that the exact split
-    position strongly affects the overlap shared by adjacent oligos. This helper
-    scores a candidate combination before primers are committed.
-    '''
-
-    if comb is None:
-        return []
-
-    tms = []
-    enzms={'bsai': ['gaggtctcg', 'cgagacctc'], 'bsmbi': ['tgcgtctca', 'tgagacgca'], 'btgzi': ['ctgcgatggagtatgtta', 'taacatactccatcgcag'], 'bbsi': ['ttgaagactt', 'aagtcttcaa']}
-    if poltype_opt == 'ca':
-        current_seq = enzms[enzm][0] + reverse_complement(bb_linkers[0]) + parts_list[0].sequence.lower()
-        for x in range(len(parts_list)-1):
-            cut = current_seq.find(comb[x]) + len(comb[x])
-            if cut < len(comb[x]):
-                continue
-            reverse_primer = reverse_complement(current_seq[current_seq.find(DR):cut] + enzms[enzm][1])
-            next_forward_primer = enzms[enzm][0] + current_seq[cut-4:] + DR
-            tms.append(primer_pair_overlap_tm(next_forward_primer, reverse_primer))
-            current_seq = enzms[enzm][0] + current_seq[cut-4:] + parts_list[x+1].sequence.lower()
-    elif poltype_opt == 'tigRNA':
-        current_seq = enzms[enzm][0] + reverse_complement(bb_linkers[0]) + parts_list[0].sequence.lower()
-        forward_primers = [None for i in parts_list]
-        reverse_primers = [None for i in parts_list]
-        forward_primers[0] = enzms[enzm][0] + reverse_complement(bb_linkers[0]) + parts_list[0].sequence.lower()[:max_ann_len]
-        for x in range(len(parts_list)-1):
-            cut = current_seq.find(comb[x]) + len(comb[x])
-            if cut < len(comb[x]):
-                continue
-            current_tail = current_seq[cut-4:]
-            if (getattr(parts_list[x+1], 'full_tigRNA_unit', None) and
-                    getattr(parts_list[x+1], 'shared_edge_5', None) and
-                    parts_list[x+1].shared_edge_5.lower() not in current_tail):
-                return []
-            if (getattr(parts_list[x+1], 'shared_edge_junction', None) and
-                    parts_list[x+1].shared_edge_junction.lower() not in current_tail + parts_list[x+1].sequence.lower()[:len(parts_list[x+1].shared_edge_5)]):
-                return []
-            current_start = current_seq.find(parts_list[x].template_sequence)
-            reverse_primers[x] = reverse_complement(current_seq[current_start:cut] + enzms[enzm][1])
-            forward_primers[x+1] = enzms[enzm][0] + current_tail + parts_list[x+1].sequence.lower()[:max_ann_len]
-            current_seq = enzms[enzm][0] + current_tail + parts_list[x+1].sequence.lower()
-        reverse_primers[-1] = reverse_complement(current_seq[-max_ann_len:] + bb_linkers[-1] + enzms[enzm][1])
-        for forward_primer,reverse_primer in zip(forward_primers, reverse_primers):
-            if forward_primer is None or reverse_primer is None:
-                return []
-            tms.append(primer_pair_overlap_tm(forward_primer, reverse_primer))
-    return tms
-
-
-def overhang_combination_score(parts_list, comb, poltype_opt='ptg', enzm='bsai', bb_linkers=['tgcc','gttt']):
-    '''Returns a sortable score for a candidate overhang combination.'''
-
-    tms = overhang_combination_overlap_tms(parts_list, comb, poltype_opt, enzm=enzm, bb_linkers=bb_linkers)
-    if tms == []:
-        return (-1, 0, 0, 0, 0)
-    min_tm = min(tms)
-    avg_tm = sum(tms) / len(tms)
-    spread = max(tms) - min_tm
-    passes_floor = 1 if min_tm >= MIN_FILL_IN_OVERLAP_TM else 0
-    return (passes_floor, min_tm, avg_tm, -spread, -sum([len(c) for c in comb]))
-
 def primer_construct_match(primer, polycistron_sequence, enzm_seq, strand=1):
     '''
     Returns the primer segment that matches the final assembled polycistron.
@@ -845,7 +768,7 @@ def tas_guide_design(sequence, system='TasH', edge_5=None, loop=None, edge_3=Non
 
 
 ## Optimize the overhangs used in Golden Gate assembly
-def golden_gate_optimization(parts_list, free_overhangsets, poltype_opt='ptg', enzm='bsai', bb_linkers=['tgcc','gttt']):
+def golden_gate_optimization(parts_list, free_overhangsets, poltype_opt='ptg'):
     '''
     Finds linkers from optimal linker sets in a provided parts list
 
@@ -982,27 +905,10 @@ def golden_gate_optimization(parts_list, free_overhangsets, poltype_opt='ptg', e
         combs = []
         for x in itertools.product(*seq_matches):
             combs.append(x)
-        best_comb = None
-        best_score = None
         for comb in combs:
             if len([c[-4:] for c in comb]) == len(set([c[-4:] for c in comb])):
-                if poltype_opt in ['ca', 'tigRNA']:
-                    score = overhang_combination_score(parts_list, comb, poltype_opt, enzm=enzm, bb_linkers=bb_linkers)
-                    if score[0] < 0:
-                        continue
-                    if best_score is None or score > best_score:
-                        best_comb = comb
-                        best_score = score
-                else:
-                    return comb
-        if best_comb is not None and best_score[0] == 1:
-            return best_comb
-        if best_comb is not None and ('fallback_comb' not in locals() or best_score > fallback_score):
-            fallback_comb = best_comb
-            fallback_score = best_score
+                return comb
     # If there are no possible combinations
-    if 'fallback_comb' in locals():
-        return fallback_comb
     return None
 
 
@@ -1151,7 +1057,7 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
             else:
                 continue
         if free_overhangsets:
-            gg_opt = golden_gate_optimization(parts_list, free_overhangsets, poltype, enzm=enzm, bb_linkers=bb_linkers)
+            gg_opt = golden_gate_optimization(parts_list, free_overhangsets, poltype)
         if gg_opt is not None:
             breakit = True
         if breakit:
@@ -1185,7 +1091,7 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
                         continue
 
                 if free_overhangsets:
-                    gg_opt = golden_gate_optimization(parts_list, free_overhangsets, poltype, enzm=enzm, bb_linkers=bb_linkers)
+                    gg_opt = golden_gate_optimization(parts_list, free_overhangsets, poltype)
                 if gg_opt is not None:
                     breakit = True
                     
@@ -1202,7 +1108,7 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
         curated = set(all_curated_overhangs())
         curated.update([reverse_complement(o) for o in list(curated)])
         rescue_overhangs = sorted([o for o in curated if o not in disallowed])
-        rescue_opt = golden_gate_optimization(parts_list, [rescue_overhangs], poltype, enzm=enzm, bb_linkers=bb_linkers)
+        rescue_opt = golden_gate_optimization(parts_list, [rescue_overhangs], poltype)
         if rescue_opt is None:
             raise InvalidUsage("No combination of optimal or rescue linkers possible for the provided existing linkers", status_code=400, payload={'pge': 'sequence.html', 'box': 'link'})
         gg_opt = rescue_opt
@@ -1210,19 +1116,6 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
         polycistron.overhang_warning = 'Rescue overhang mode was used. The selected overhangs are individually present in curated overhang tables, but this exact overhang collection was not found as a validated optimal set. Assembly may fail and should be experimentally validated.'
         polycistron.warning = polycistron.overhang_warning
     polycistron.selected_overhangs = [g[-4:] for g in gg_opt]
-    polycistron.fill_in_overlap_tms = overhang_combination_overlap_tms(parts_list, gg_opt, poltype, enzm=enzm, bb_linkers=bb_linkers) if poltype == 'tigRNA' else []
-    if polycistron.fill_in_overlap_tms != []:
-        min_overlap_tm = min(polycistron.fill_in_overlap_tms)
-        if min_overlap_tm < MIN_FILL_IN_OVERLAP_TM:
-            tm_warning = ('Low fill-in overlap Tm warning. The best available overhang choice has a minimum '
-                          'predicted oligo-pair overlap Tm of ' + str(round(min_overlap_tm, 1)) +
-                          ' C, below the ' + str(MIN_FILL_IN_OVERLAP_TM) +
-                          ' C target. Assembly may be less efficient for short fragments.')
-            if polycistron.overhang_warning:
-                polycistron.overhang_warning += ' ' + tm_warning
-            else:
-                polycistron.overhang_warning = tm_warning
-            polycistron.warning = (polycistron.warning + ' ' + tm_warning) if polycistron.warning else tm_warning
     
     
     ## Modify sequences and design primers
@@ -1393,6 +1286,10 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
     polycistron.parts = parts_list
     
     
+    if poltype == 'ca':
+        # If CA, the primer optimization step can be skipped, since the DR is very short.
+        return polycistron
+
     if poltype == 'tigRNA':
         # tigRNA oligos contain required scarless extension sequence; do not trim them.
         for part in polycistron.parts:

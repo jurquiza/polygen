@@ -1,0 +1,2 @@
+[console_scripts]
+polygen-engine = polygen_engine.cli:main

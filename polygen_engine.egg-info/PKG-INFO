@@ -1,3 +1,22 @@
+Metadata-Version: 2.4
+Name: polygen-engine
+Version: 0.2.0
+Summary: PolyGEN engine for designing multiplexed RNA arrays and Golden Gate oligos.
+Author: Uriel Urquiza-Garcia
+License-Expression: MIT
+Project-URL: Repository, https://github.com/jurquiza/polygen
+Keywords: synthetic-biology,golden-gate,crispr,gRNA,tRNA,tigRNA,TasA,TasH
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: License.txt
+Requires-Dist: numpy>=1.21
+Requires-Dist: pandas<3,>=1.3
+Requires-Dist: biopython==1.77
+Dynamic: license-file
+
 # **PolyGEN**
 
 Design automation of polycistronic tRNA-based genes containing custom RNAs for assembly in Type IIs restriction enzyme-driven Golden Gate experiments. The backbone of PolyGEN is based on
