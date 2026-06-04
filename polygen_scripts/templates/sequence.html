@@ -138,11 +138,21 @@
   <div class="row">
     <div class="col-12">
       <div class="form-group">
+        <label for="arrayAnnotation">Array purpose / GenBank annotation (required)</label>
+        <span class="fa fa-info-circle" data-toggle='tooltip' title="Describe what this RNA array targets or tests. This annotation is required and will be written into the GenBank file and output summary."></span>
+        <textarea class="form-control" name="array_annotation" id="arrayAnnotation" rows="3" placeholder="e.g. CXCR4 TasH multiplex array targeting exon 2; spacer A/B windows derived from the CXCR4 target site" style="background-color:{{ session['clr']['array_annotation'] }}">{{ session['array_annotation'] }}</textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="form-group">
         <label for="ControlTextarea1">Polycistron description (required)</label>
         <span class="fa fa-info-circle" data-toggle='tooltip' title="Specify the contents of your polycistron here. First state the RNA type, followed by a semicolon and sequence. Separate parts by a vertical line. Use tigRNA;sequence with the tigRNA polycistron type."></span>
         <p class="form-example-text">
         This is a functional example: gRNA;ATAGGCTCCGATCGTGAACC|gRNA;GGAATTTGGCGAGGCCTATT|smRNA;CGTATGGCGTATCGGATTCTAT<br>
-        tigRNA mode example: tigRNA;TGAAAGATCGTACCCAATGGAATGTACCGATTTCCA|tigRNA;TGAAAGTACCGATCCAATGGAATGATCGTACTTCCA<br>
+        tigRNA mode example: tigRNA;AAGCGAGTCAAAGGCAATAAGACAACCACGGAGACGAAGCGAGTCA|tigRNA;AAGCGAGTCATTAACGCGAAGACAACCAAGATTAGCAAGCGAGTCA<br>
         This will produce an error: smRNA;TTGAAGTAAATACAAACAGG|gRNA;TTGTATCAAAAATGCAAGCT|gRNA;TTTTAGTAACAATAAGAGAG</p>
         {% if session['PTG_transfer'] %}
             <textarea class="form-control" name="sequence_spacers" id="ControlTextarea3" rows="5" placeholder='e.g. pegRNA;ATGCATGC|gRNA;ATGCATGC|smRNA;ATGCATGC' style="background-color:{{ session['clr']['sequence_spacers'] }}">{{ session['PTG_transfer'] }}</textarea>

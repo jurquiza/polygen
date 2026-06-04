@@ -21,11 +21,14 @@ For pegRNA design, PolyGEN tests PBS lengths from 8 to 17 nt and chooses the PBS
 PolyGEN includes a Tas guide design page for TIGR-Tas guide RNAs. It currently supports TasA and TasH mature tigRNA architectures.
 
 - TasA targets are represented as two 9 bp programmable spacer regions.
-- TasH targets are represented as two 8 bp programmable spacer regions.
+- TasH multiplexing targets are represented as two 8 bp programmable spacer regions. The first 8 bp become spacer A and the reverse complement of the second 8 bp becomes spacer B.
 - The mature tigRNA is assembled as edge repeat 5 prime, spacer A, loop repeat, spacer B and edge repeat 3 prime.
+- The default TasA scaffold is AACCG, spacer A, AGTAACCCC, spacer B, AGTG. Adjacent TasA array units repeat as right edge followed by the next left edge.
+- For adjacent TasA units, the AGTG-AACCG junction is treated as a shared edge boundary. Oligo design verifies that downstream fragment forward oligos carry the complete AGTGAACCG junction across the fragment boundary.
+- GenBank exports annotate downstream TasA units with an inherited guide context spanning the upstream AGTG right edge plus the current AACCG-left-edge unit.
 - Exact target windows are 18 bp for TasA and 16 bp for TasH.
 - Exact target windows can be separated with new lines, spaces, commas, semicolons or vertical bars.
-- Scaffold fields can be edited for locus-specific tigRNA scaffolds. DNA or RNA bases are accepted, but the final mature tigRNA must be 36 nt.
+- Scaffold fields can be edited for locus-specific tigRNA scaffolds. DNA or RNA bases are accepted, but the final mature tigRNA must be 36 nt for TasA or the multiplexing unit must be 46 nt for TasH.
 
 Designed tigRNAs can be selected and sent directly to the PTG page using the `tigRNA` architecture. Only checked rows are transferred; if no rows are checked, the full generated set is transferred. In this architecture, sequences are provided as mature tigRNAs:
 
@@ -35,11 +38,21 @@ tigRNA;sequence0|tigRNA;sequence1|tigRNA;sequence2
 
 The `tigRNA` architecture does not add tRNAs and does not add a Cpf1 direct repeat. It treats each input as a mature tigRNA unit, then designs oligo-extension fragments for scarless Golden Gate assembly of multiplex tigRNA arrays.
 
-For tigRNA oligo design, PolyGEN chooses internal Golden Gate overhangs from spacer B only, so fixed edge and loop repeat regions are not used as variable assembly overhang sources. Each fragment is produced from a forward/reverse oligo pair with an overlapping region that can be filled in by polymerase. The reported oligo melting temperature for tigRNA fragments is calculated only from that shared overlap, not from the full oligo sequence.
+For tigRNA oligo design, PolyGEN chooses internal Golden Gate overhangs from spacer A or spacer B, so fixed edge and loop repeat regions are not used as variable assembly overhang sources. Spacer-A splits are accepted only when enough left-side sequence remains for the oligo-extension fragment. Each fragment is produced from a forward/reverse oligo pair with an overlapping region that can be filled in by polymerase. The reported oligo melting temperature for tigRNA fragments is calculated only from that shared overlap, not from the full oligo sequence.
 
 The `Reuse PTG border oligos` option is applied only to PTG/Cas9 tRNA-processed assemblies. These reusable border oligos are specific to the selected restriction enzyme and 4 bp border linkers. CA and `tigRNA` assemblies do not use the tRNA architecture, so PolyGEN always designs new target-specific border oligos for those modes.
 
 The GenBank output annotates each mature tigRNA with edge repeat 5 prime, spacer A, loop repeat, spacer B and edge repeat 3 prime features.
+
+## GenBank annotations
+
+PolyGEN annotates generated GenBank files with readable labels and notes for each array unit, spacer, scaffold, tRNA, direct repeat, tigRNA subfeature, pegRNA PBS/RT-template segment and primer-binding site. These labels preserve the link between each RNA part and the sequence it targets after the array has been assembled.
+
+For TasH multiplexing units, GenBank exports also mark the processing cuts inside the identical edge repeats and annotate the predicted mature tigRNA retained after edge-repeat maturation.
+
+For TasH arrays, adjacent units share the identical edge repeat at each junction. PolyGEN keeps the first full unit and removes the duplicated leading edge repeat from each subsequent TasH unit during array assembly, while annotating the shared repeat as part of both neighboring units.
+
+TasH oligo design uses the same shared-edge model: downstream fragment forward oligos include the shared edge-repeat overlap from the previous unit, and the fragment table notes when a leading edge repeat was shared rather than duplicated.
 
 _____________
 

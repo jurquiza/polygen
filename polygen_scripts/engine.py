@@ -107,6 +107,19 @@ class Polycistron:
     warning = None
 
 
+def add_feature(polycistron, start, end, feature_type, label=None, note=None, strand=1):
+    '''Adds a GenBank feature with readable label and note qualifiers.'''
+
+    qualifiers = {}
+    if label is not None:
+        qualifiers['label'] = label
+    if note is not None:
+        qualifiers['note'] = note
+    polycistron.features.append(SeqFeature(FeatureLocation(start, end, strand=strand),
+                                           type=feature_type,
+                                           qualifiers=qualifiers))
+
+
 # Define functions to ease the main computation
 def polyToJson(poly):
     '''transforms data to json format''' 
@@ -247,20 +260,25 @@ PBS_TARGET_TM = 30
 PBS_MIN_LEN = 8
 PBS_MAX_LEN = 17
 PEG_PBS_LENGTHS = {}
+TIGRNA_MIN_SPLIT_LEN = 12
 TAS_SYSTEMS = {
     'TasA': {
         'spacer_len': 9,
-        'edge_5': 'TGAA',
-        'loop': 'CCAATGGAAT',
-        'edge_3': 'TCCA',
-        'note': 'TasA/FpTIGR uses two 9 nt programmable spacers.'
+        'edge_5': 'AACCG',
+        'loop': 'AGTAACCCC',
+        'edge_3': 'AGTG',
+        'spacer_a_transform': 'reverse_complement',
+        'spacer_b_transform': 'provided',
+        'note': 'TasA uses two 9 nt programmable spacers between AACCG and AGTG edge repeats.'
     },
     'TasH': {
         'spacer_len': 8,
-        'edge_5': 'TGAAA',
-        'loop': 'CCAATGGAAT',
-        'edge_3': 'TTCCA',
-        'note': 'TasH/SpTIGR uses two 8 nt programmable spacers.'
+        'edge_5': 'AAGCGAGTCA',
+        'loop': 'AAGACAACCA',
+        'edge_3': 'AAGCGAGTCA',
+        'spacer_a_transform': 'provided',
+        'spacer_b_transform': 'reverse_complement',
+        'note': 'TasH uses two 8 nt programmable spacers in the multiplexing scaffold; spacer B is reverse-complemented from the target window.'
     }
 }
 
@@ -268,10 +286,10 @@ def make_tas_candidate(target, system, edge_5, loop, edge_3, strand='provided', 
     '''
     Builds one mature tigRNA candidate from one target window.
 
-    TasA windows are 18 bp and are split into two 9 bp programmable spacers.
-    TasH windows are 16 bp and are split into two 8 bp programmable spacers.
-    Spacer A is reverse-complemented and spacer B is kept in the provided
-    orientation before both are embedded in the mature tigRNA scaffold.
+    Target windows are split into two programmable spacers. TasA keeps the
+    previous target-window convention where spacer A is reverse-complemented.
+    TasH uses multiplexing inputs where spacer A is embedded as provided and
+    spacer B is reverse-complemented from the second half of the target window.
     
     :param target: Exact target window sequence
     :type target: str
@@ -293,8 +311,10 @@ def make_tas_candidate(target, system, edge_5, loop, edge_3, strand='provided', 
     target = target.upper()
     if end is None:
         end = len(target)
-    spacer_a_dna = reverse_complement(target[:spacer_len])
-    spacer_b_dna = target[spacer_len:]
+    spacer_a_input = target[:spacer_len]
+    spacer_a_dna = reverse_complement(spacer_a_input) if config.get('spacer_a_transform') == 'reverse_complement' else spacer_a_input
+    spacer_b_input = target[spacer_len:]
+    spacer_b_dna = reverse_complement(spacer_b_input) if config.get('spacer_b_transform') == 'reverse_complement' else spacer_b_input
     tigRNA_dna = edge_5.replace('U', 'T') + spacer_a_dna + loop.replace('U', 'T') + spacer_b_dna + edge_3.replace('U', 'T')
     gc = gc_content(target)
     penalty = abs(50 - gc) + max(0, longest_homopolymer(tigRNA_dna) - 3) * 10
@@ -315,7 +335,7 @@ def make_tas_candidate(target, system, edge_5, loop, edge_3, strand='provided', 
         'ptg_part': 'tigRNA;' + tigRNA_dna
     }
 
-def annotate_tigRNA_features(polycistron, start, sequence):
+def annotate_tigRNA_features(polycistron, start, sequence, shared_edge_5_start=None, shared_edge_5=None, shared_edge_3_start=None, shared_edge_3=None):
     '''
     Annotates scaffold and spacer regions within one mature tigRNA.
 
@@ -335,17 +355,19 @@ def annotate_tigRNA_features(polycistron, start, sequence):
     '''
 
     def append_tig_feature(rel_start, rel_end, label):
-        polycistron.features.append(SeqFeature(FeatureLocation(start+rel_start, start+rel_end, strand=1),
-                                               type='misc_feature',
-                                               qualifiers={'label': label, 'note': label}))
+        add_feature(polycistron, start+rel_start, start+rel_end, 'misc_feature',
+                    label=label, note=label)
 
     sequence = sequence.lower()
+    shared_edge_5 = shared_edge_5.replace('U', 'T').lower() if shared_edge_5 else None
+    shared_edge_3 = shared_edge_3.replace('U', 'T').lower() if shared_edge_3 else None
     for system, config in TAS_SYSTEMS.items():
         edge_5 = config['edge_5'].replace('U', 'T').lower()
         loop = config['loop'].replace('U', 'T').lower()
         edge_3 = config['edge_3'].replace('U', 'T').lower()
         spacer_len = config['spacer_len']
-        if len(sequence) == 36 and sequence.startswith(edge_5) and sequence.endswith(edge_3):
+        expected_len = len(edge_5) + len(edge_3) + len(loop) + 2 * spacer_len
+        if len(sequence) == expected_len and sequence.startswith(edge_5) and sequence.endswith(edge_3):
             spacer_a_start = len(edge_5)
             spacer_a_end = spacer_a_start + spacer_len
             loop_start = spacer_a_end
@@ -358,6 +380,76 @@ def annotate_tigRNA_features(polycistron, start, sequence):
                 append_tig_feature(loop_start, loop_end, system + ' tigRNA loop repeat')
                 append_tig_feature(spacer_b_start, spacer_b_end, system + ' tigRNA spacer B')
                 append_tig_feature(spacer_b_end, len(sequence), system + ' tigRNA edge repeat 3 prime')
+                if system == 'TasA' and shared_edge_3_start is not None and shared_edge_3 == edge_3:
+                    inherited_seq = (shared_edge_3 + sequence).upper()
+                    add_feature(polycistron, shared_edge_3_start, start+len(edge_5), 'misc_feature',
+                                label=system + ' shared edge junction',
+                                note=system + ' shared multiplexing junction formed by upstream right edge repeat ' + edge_3.upper() + ' and downstream left edge repeat ' + edge_5.upper())
+                    add_feature(polycistron, shared_edge_3_start, start+len(sequence), 'misc_feature',
+                                label=system + ' inherited guide context',
+                                note=system + ' downstream guide context inherits upstream right edge repeat; sequence=' + inherited_seq)
+                if system == 'TasH' and edge_5 == edge_3 and len(edge_5) % 2 == 0:
+                    cut_offset = int(len(edge_5) / 2)
+                    processed_start = cut_offset
+                    processed_end = len(sequence) - cut_offset
+                    processed_seq = sequence[processed_start:processed_end].upper()
+                    append_tig_feature(0, cut_offset, system + ' discarded 5 prime ER half')
+                    append_tig_feature(cut_offset, len(edge_5), system + ' retained 5 prime ER half')
+                    append_tig_feature(spacer_b_end, spacer_b_end + cut_offset, system + ' retained 3 prime ER half')
+                    append_tig_feature(spacer_b_end + cut_offset, len(sequence), system + ' discarded 3 prime ER half')
+                    add_feature(polycistron, start+processed_start, start+processed_end, 'misc_feature',
+                                label=system + ' processed mature tigRNA',
+                                note=system + ' mature tigRNA after ER processing; sequence=' + processed_seq)
+                    add_feature(polycistron, start+cut_offset-1, start+cut_offset+1, 'misc_feature',
+                                label=system + ' 5 prime ER processing cut',
+                                note='Processing cut occurs between the two halves of the 5 prime edge repeat')
+                    add_feature(polycistron, start+processed_end-1, start+processed_end+1, 'misc_feature',
+                                label=system + ' 3 prime ER processing cut',
+                                note='Processing cut occurs between the two halves of the 3 prime edge repeat')
+                return system
+        shared_expected_len = 2 * spacer_len + len(loop) + len(edge_3)
+        if (shared_edge_5_start is not None and shared_edge_5 == edge_5 and
+                len(sequence) == shared_expected_len and sequence.endswith(edge_3)):
+            spacer_a_start = 0
+            spacer_a_end = spacer_len
+            loop_start = spacer_a_end
+            loop_end = loop_start + len(loop)
+            spacer_b_start = loop_end
+            spacer_b_end = spacer_b_start + spacer_len
+            if sequence[loop_start:loop_end] == loop:
+                add_feature(polycistron, shared_edge_5_start, shared_edge_5_start+len(edge_5), 'misc_feature',
+                            label=system + ' shared tigRNA edge repeat',
+                            note=system + ' edge repeat shared by adjacent multiplexing units')
+                append_tig_feature(spacer_a_start, spacer_a_end, system + ' tigRNA spacer A')
+                append_tig_feature(loop_start, loop_end, system + ' tigRNA loop repeat')
+                append_tig_feature(spacer_b_start, spacer_b_end, system + ' tigRNA spacer B')
+                append_tig_feature(spacer_b_end, len(sequence), system + ' tigRNA edge repeat 3 prime')
+                if system == 'TasH' and edge_5 == edge_3 and len(edge_5) % 2 == 0:
+                    cut_offset = int(len(edge_5) / 2)
+                    processed_start = shared_edge_5_start + cut_offset
+                    processed_end = start + spacer_b_end + cut_offset
+                    processed_seq = (shared_edge_5[cut_offset:] + sequence[:spacer_b_end] + edge_3[:cut_offset]).upper()
+                    add_feature(polycistron, shared_edge_5_start, shared_edge_5_start+cut_offset, 'misc_feature',
+                                label=system + ' discarded shared 5 prime ER half',
+                                note=system + ' discarded half of shared upstream ER for this mature tigRNA')
+                    add_feature(polycistron, shared_edge_5_start+cut_offset, shared_edge_5_start+len(edge_5), 'misc_feature',
+                                label=system + ' retained shared 5 prime ER half',
+                                note=system + ' retained half of shared upstream ER for this mature tigRNA')
+                    add_feature(polycistron, start+spacer_b_end, start+spacer_b_end+cut_offset, 'misc_feature',
+                                label=system + ' retained 3 prime ER half',
+                                note=system + ' retained half of downstream ER for this mature tigRNA')
+                    add_feature(polycistron, start+spacer_b_end+cut_offset, start+len(sequence), 'misc_feature',
+                                label=system + ' discarded 3 prime ER half',
+                                note=system + ' discarded half of downstream ER for this mature tigRNA')
+                    add_feature(polycistron, processed_start, processed_end, 'misc_feature',
+                                label=system + ' processed mature tigRNA',
+                                note=system + ' mature tigRNA after shared-ER processing; sequence=' + processed_seq)
+                    add_feature(polycistron, shared_edge_5_start+cut_offset-1, shared_edge_5_start+cut_offset+1, 'misc_feature',
+                                label=system + ' 5 prime ER processing cut',
+                                note='Processing cut occurs between the two halves of the shared upstream edge repeat')
+                    add_feature(polycistron, start+spacer_b_end+cut_offset-1, start+spacer_b_end+cut_offset+1, 'misc_feature',
+                                label=system + ' 3 prime ER processing cut',
+                                note='Processing cut occurs between the two halves of the downstream edge repeat')
                 return system
 
     midpoint = int(np.floor(len(sequence) / 2))
@@ -370,9 +462,9 @@ def tigRNA_spacer_ranges(sequence):
     Returns programmable spacer coordinate ranges for a mature tigRNA.
 
     For recognized TasA/TasH scaffolds, the returned list contains spacer A and
-    spacer B ranges. Golden Gate optimization uses the spacer B range as the
-    allowed source for internal tigRNA overhangs. For unknown scaffolds, the
-    whole sequence is returned as one fallback range.
+    spacer B ranges. Golden Gate optimization can use either programmable
+    spacer as the source for internal tigRNA overhangs. For unknown scaffolds,
+    the whole sequence is returned as one fallback range.
     
     :param sequence: Mature tigRNA DNA sequence
     :type sequence: str
@@ -392,9 +484,18 @@ def tigRNA_spacer_ranges(sequence):
         loop_end = loop_start + len(loop)
         spacer_b_start = loop_end
         spacer_b_end = spacer_b_start + spacer_len
-        if (len(sequence) == 36 and sequence.startswith(edge_5) and
+        expected_len = len(edge_5) + len(edge_3) + len(loop) + 2 * spacer_len
+        if (len(sequence) == expected_len and sequence.startswith(edge_5) and
                 sequence[loop_start:loop_end] == loop and sequence.endswith(edge_3)):
             return [(spacer_a_start, spacer_a_end), (spacer_b_start, spacer_b_end)]
+        shared_expected_len = 2 * spacer_len + len(loop) + len(edge_3)
+        shared_loop_start = spacer_len
+        shared_loop_end = shared_loop_start + len(loop)
+        shared_spacer_b_start = shared_loop_end
+        shared_spacer_b_end = shared_spacer_b_start + spacer_len
+        if (len(sequence) == shared_expected_len and
+                sequence[shared_loop_start:shared_loop_end] == loop and sequence.endswith(edge_3)):
+            return [(0, spacer_len), (shared_spacer_b_start, shared_spacer_b_end)]
     return [(0, len(sequence))]
 
 def primer_annealing_tm(primer, max_ann_len=30):
@@ -551,8 +652,9 @@ def tas_guide_design(sequence, system='TasH', edge_5=None, loop=None, edge_3=Non
 
     The TIGR-Tas papers describe mature tigRNAs as edge-repeat fragment,
     spacer A, loop repeat, spacer B, edge-repeat fragment. TasA/FpTIGR uses
-    two 9 nt spacers, and TasH/SpTIGR uses two 8 nt spacers. No PAM/TAM is
-    required, so this scans all possible target windows on both orientations.
+    two 9 nt spacers, while TasH multiplexing uses two 8 nt spacers. No
+    PAM/TAM is required, so this scans all possible target windows on both
+    orientations.
 
     When ``exact_spacer`` is provided, it is interpreted as one or more exact
     target windows instead of scanning the longer target sequence. Entries may
@@ -597,8 +699,11 @@ def tas_guide_design(sequence, system='TasH', edge_5=None, loop=None, edge_3=Non
     scaffold = edge_5 + loop + edge_3
     if re.search(r'^[ACGTU]*$', scaffold) is None:
         raise InvalidUsage("Invalid scaffold input", status_code=400, payload={'pge': 'tas_generation.html', 'box': 'scaffold'})
-    if len(scaffold) + 2 * spacer_len != 36:
-        raise InvalidUsage("Scaffold and spacer lengths must produce a 36 nt mature tigRNA", status_code=400, payload={'pge': 'tas_generation.html', 'box': 'scaffold'})
+    expected_len = len(scaffold) + 2 * spacer_len
+    if system == 'TasA' and expected_len != 36:
+        raise InvalidUsage("TasA scaffold and spacer lengths must produce a 36 nt mature tigRNA", status_code=400, payload={'pge': 'tas_generation.html', 'box': 'scaffold'})
+    if system == 'TasH' and expected_len != 46:
+        raise InvalidUsage("TasH scaffold and spacer lengths must produce a 46 nt mature tigRNA", status_code=400, payload={'pge': 'tas_generation.html', 'box': 'scaffold'})
 
     max_guides = int(max_guides)
     min_gc = float(min_gc)
@@ -647,10 +752,10 @@ def golden_gate_optimization(parts_list, free_overhangsets, poltype_opt='ptg'):
     '''
     Finds linkers from optimal linker sets in a provided parts list
 
-    In ``tigRNA`` mode, the optimizer uses only spacer B from recognized
-    TasA/TasH mature tigRNAs as the source region for internal Golden Gate
-    overhangs. This avoids placing variable overhangs in fixed edge or loop
-    repeat scaffold sequence.
+    In ``tigRNA`` mode, the optimizer uses spacer A or spacer B from recognized
+    TasA/TasH tigRNAs as the source region for internal Golden Gate overhangs.
+    This avoids placing variable overhangs in fixed edge or loop repeat
+    scaffold sequence while giving the linker search more flexibility.
     
     :param parts_list: An array of objects of class part
     :type parts_list: list
@@ -687,7 +792,7 @@ def golden_gate_optimization(parts_list, free_overhangsets, poltype_opt='ptg'):
         for x in parts_list:
             oh_list.append(x.sequence)
             ranges = tigRNA_spacer_ranges(x.sequence)
-            tigRNA_ranges.append([ranges[-1]])
+            tigRNA_ranges.append(ranges)
     
     ## Starting in the middle of the variable sequences and moving outwards, find overhang combinations
     for cov in range(2,max([int(np.ceil(np.true_divide(len(prt),2))) for prt in flattn(oh_list)])):
@@ -773,7 +878,8 @@ def golden_gate_optimization(parts_list, free_overhangsets, poltype_opt='ptg'):
                                 spacer_cov = spacer_seq[spacer_mid-cov:spacer_mid+cov]
                             if overhang in spacer_cov:
                                 overhang_start = oh_list[x].find(overhang, r_start, r_end)
-                                seq_matches[x].append(oh_list[x][:overhang_start+4])
+                                if overhang_start + 4 >= TIGRNA_MIN_SPLIT_LEN:
+                                    seq_matches[x].append(oh_list[x][:overhang_start+4])
                             
         # Copyright (c) 2019 Scott Weisberg
         combs = []
@@ -843,23 +949,65 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
     for part in parts_list:
         part.sequence = part.sequence.lower()
         part.template_sequence = part.sequence
+        part_label = part.name + ' ' + part.type
+        unit_note = 'PolyGEN array unit ' + part.name + '; RNA type=' + part.type
+        if getattr(part, 'shared_edge_note', None):
+            unit_note += '; ' + part.shared_edge_note
         polycistron.sequence += part.sequence
-        polycistron.features.append(SeqFeature(FeatureLocation(mmry, mmry+len(part.sequence), strand=1), type=part.type))
+        add_feature(polycistron, mmry, mmry+len(part.sequence), part.type,
+                    label=part_label,
+                    note=unit_note)
         if part.type == 'pegRNA':
             pbs_len = getattr(part, 'pbs_len', pegRNA_pbs_length(part.sequence))
-            polycistron.features.append(SeqFeature(FeatureLocation(mmry, mmry+part.sequence.find(scaffld), strand=1), type='spacer'))
-            polycistron.features.append(SeqFeature(FeatureLocation(mmry+part.sequence.find(scaffld)+len(scaffld), mmry+len(part.sequence)-pbs_len, strand=1), type='RT template'))
-            polycistron.features.append(SeqFeature(FeatureLocation(mmry+len(part.sequence)-pbs_len, mmry+len(part.sequence), strand=1), type='PBS'))
+            spacer_end = mmry+part.sequence.find(scaffld)
+            rt_start = mmry+part.sequence.find(scaffld)+len(scaffld)
+            add_feature(polycistron, mmry, spacer_end, 'spacer',
+                        label=part.name + ' spacer',
+                        note=part.name + ' pegRNA spacer; sequence=' + part.sequence[:part.sequence.find(scaffld)].upper())
+            add_feature(polycistron, rt_start, mmry+len(part.sequence)-pbs_len, 'RT template',
+                        label=part.name + ' RT template',
+                        note=part.name + ' pegRNA reverse-transcription template')
+            add_feature(polycistron, mmry+len(part.sequence)-pbs_len, mmry+len(part.sequence), 'PBS',
+                        label=part.name + ' PBS',
+                        note=part.name + ' pegRNA primer binding site; length=' + str(pbs_len) + ' nt')
         elif part.type == 'gRNA':
-            polycistron.features.append(SeqFeature(FeatureLocation(mmry, mmry+part.sequence.find(scaffld), strand=1), type='spacer'))
-            polycistron.features.append(SeqFeature(FeatureLocation(mmry+part.sequence.find(tRNA), mmry+len(part.sequence), strand=1), type='tRNA'))
+            spacer = part.sequence[:part.sequence.find(scaffld)]
+            add_feature(polycistron, mmry, mmry+part.sequence.find(scaffld), 'spacer',
+                        label=part.name + ' spacer',
+                        note=part.name + ' sgRNA spacer; sequence=' + spacer.upper())
+            add_feature(polycistron, mmry+part.sequence.find(tRNA), mmry+len(part.sequence), 'tRNA',
+                        label=part.name + ' tRNA',
+                        note='tRNA processing element for ' + part.name)
         elif part.type == 'smRNA':
-            polycistron.features.append(SeqFeature(FeatureLocation(mmry, mmry+len(part.sequence)-len(tRNA), strand=1), type='smRNA'))
-            polycistron.features.append(SeqFeature(FeatureLocation(mmry+len(part.sequence)-len(tRNA), mmry+len(part.sequence), strand=1), type='tRNA'))
+            smrna = part.sequence[:-len(tRNA)]
+            add_feature(polycistron, mmry, mmry+len(part.sequence)-len(tRNA), 'smRNA',
+                        label=part.name + ' smRNA cargo',
+                        note=part.name + ' small RNA cargo; sequence=' + smrna.upper())
+            add_feature(polycistron, mmry+len(part.sequence)-len(tRNA), mmry+len(part.sequence), 'tRNA',
+                        label=part.name + ' tRNA',
+                        note='tRNA processing element for ' + part.name)
         elif part.type == 'tigRNA':
-            annotate_tigRNA_features(polycistron, mmry, part.sequence)
+            shared_edge = getattr(part, 'shared_edge_5', None)
+            shared_edge_start = mmry - len(shared_edge) if shared_edge and getattr(part, 'full_tigRNA_unit', None) else None
+            shared_edge_3 = getattr(part, 'shared_edge_3', None)
+            shared_edge_3_start = mmry - len(shared_edge_3) if shared_edge_3 else None
+            annotate_tigRNA_features(polycistron, mmry, part.sequence,
+                                     shared_edge_5_start=shared_edge_start,
+                                     shared_edge_5=shared_edge,
+                                     shared_edge_3_start=shared_edge_3_start,
+                                     shared_edge_3=shared_edge_3)
+        elif part.type == 'DR':
+            add_feature(polycistron, mmry, mmry+len(part.sequence), 'direct_repeat',
+                        label=part.name + ' terminal direct repeat',
+                        note='Terminal Cpf1/Cas12a direct repeat')
         if part.type == 'crRNA':
-            polycistron.features.append(SeqFeature(FeatureLocation(mmry+part.sequence.find(DR)+len(DR), mmry+len(part.sequence), strand=1), type='spacer'))
+            spacer = part.sequence[part.sequence.find(DR)+len(DR):]
+            add_feature(polycistron, mmry, mmry+part.sequence.find(DR)+len(DR), 'direct_repeat',
+                        label=part.name + ' direct repeat',
+                        note='Cpf1/Cas12a direct repeat for ' + part.name)
+            add_feature(polycistron, mmry+part.sequence.find(DR)+len(DR), mmry+len(part.sequence), 'spacer',
+                        label=part.name + ' spacer',
+                        note=part.name + ' crRNA spacer; sequence=' + spacer.upper())
         mmry += len(part.sequence)
     polycistron.sequence += bb_linkers[1] + enzms[enzm][1]
 
@@ -1052,6 +1200,11 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
                     current_start = parts_list[i].sequence.find(parts_list[i].template_sequence)
                     current_cut = parts_list[i].sequence.find(gg_opt[i]) + len(gg_opt[i])
                     current_tail = parts_list[i].sequence[current_cut-4:]
+                    if getattr(parts_list[i+1], 'full_tigRNA_unit', None) and getattr(parts_list[i+1], 'shared_edge_5', None) and parts_list[i+1].shared_edge_5.lower() not in current_tail:
+                        raise InvalidUsage("Shared TasH edge repeat was not retained in the oligo overlap", status_code=400, payload={'pge': 'sequence.html', 'box': 'sequence_spacers'})
+                    if getattr(parts_list[i+1], 'shared_edge_junction', None) and parts_list[i+1].shared_edge_junction.lower() not in current_tail + parts_list[i+1].sequence[:len(parts_list[i+1].shared_edge_5)]:
+                        raise InvalidUsage("Shared TasA edge junction was not retained in the oligo overlap", status_code=400, payload={'pge': 'sequence.html', 'box': 'sequence_spacers'})
+                    parts_list[i+1].shared_edge_overlap = current_tail
                     parts_list[i].primer_reverse = reverse_complement(parts_list[i].sequence[current_start:current_cut] + enzms[enzm][1])
                     parts_list[i+1].primer_forward = enzms[enzm][0] + current_tail + parts_list[i+1].sequence[:max_ann_len]
                     parts_list[i+1].sequence = enzms[enzm][0] + current_tail + parts_list[i+1].sequence
@@ -1068,6 +1221,11 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
                 current_start = parts_list[i].sequence.find(parts_list[i].template_sequence)
                 current_cut = parts_list[i].sequence.find(gg_opt[i]) + len(gg_opt[i])
                 current_tail = parts_list[i].sequence[current_cut-4:]
+                if getattr(parts_list[i+1], 'full_tigRNA_unit', None) and getattr(parts_list[i+1], 'shared_edge_5', None) and parts_list[i+1].shared_edge_5.lower() not in current_tail:
+                    raise InvalidUsage("Shared TasH edge repeat was not retained in the oligo overlap", status_code=400, payload={'pge': 'sequence.html', 'box': 'sequence_spacers'})
+                if getattr(parts_list[i+1], 'shared_edge_junction', None) and parts_list[i+1].shared_edge_junction.lower() not in current_tail + parts_list[i+1].sequence[:len(parts_list[i+1].shared_edge_5)]:
+                    raise InvalidUsage("Shared TasA edge junction was not retained in the oligo overlap", status_code=400, payload={'pge': 'sequence.html', 'box': 'sequence_spacers'})
+                parts_list[i+1].shared_edge_overlap = current_tail
                 parts_list[i].primer_reverse = reverse_complement(parts_list[i].sequence[current_start:current_cut] + enzms[enzm][1])
                 parts_list[i+1].primer_forward = enzms[enzm][0] + current_tail + parts_list[i+1].sequence[:max_ann_len]
                 parts_list[i+1].sequence = enzms[enzm][0] + current_tail + parts_list[i+1].sequence
@@ -1424,11 +1582,37 @@ def PTGbldr(name, inserts, poltype='ptg'):
 
     elif poltype=='tigRNA':
         tigRNA_parts = []
+        previous_edge_3 = None
 
         for c,prt in enumerate(inserts):
             if prt[0] != 'tigRNA':
                 raise InvalidUsage("tigRNA mode can only process tigRNAs", status_code=400, payload={'pge': 'sequence.html', 'box': 'poltype_input'})
-            tigRNA_parts.append(Part(name+'_'+str(c), prt[0], str(prt[1])))
+            sequence = str(prt[1])
+            part = Part(name+'_'+str(c), prt[0], sequence)
+            for system,config in TAS_SYSTEMS.items():
+                edge_5 = config['edge_5'].replace('U', 'T')
+                edge_3 = config['edge_3'].replace('U', 'T')
+                if previous_edge_3 == edge_5 and sequence.upper().startswith(edge_5.upper()) and edge_5.upper() == edge_3.upper():
+                    part.full_tigRNA_unit = sequence
+                    part.sequence = sequence[len(edge_5):]
+                    part.shared_edge_5 = edge_5
+                    part.shared_edge_5_system = system
+                    part.shared_edge_note = 'Leading ' + edge_5 + ' edge repeat is shared with the previous TasH unit and is not duplicated in the assembled array.'
+                    break
+                elif previous_edge_3 == edge_3 and sequence.upper().startswith(edge_5.upper()) and edge_5.upper() != edge_3.upper():
+                    part.shared_edge_3 = edge_3
+                    part.shared_edge_5 = edge_5
+                    part.shared_edge_5_system = system
+                    part.shared_edge_junction = edge_3 + edge_5
+                    part.shared_edge_note = 'Upstream ' + edge_3 + ' right edge and downstream ' + edge_5 + ' left edge form the shared TasA junction ' + part.shared_edge_junction + '.'
+                    break
+            previous_edge_3 = None
+            for system,config in TAS_SYSTEMS.items():
+                edge_3 = config['edge_3'].replace('U', 'T')
+                if sequence.upper().endswith(edge_3.upper()):
+                    previous_edge_3 = edge_3
+                    break
+            tigRNA_parts.append(part)
 
         return tigRNA_parts
         
@@ -1511,6 +1695,10 @@ def annotatePrimers(polycistron, oligo_prefix='o', oligo_index='0', staticBorder
             match = primer_construct_match(primer, polycistron.sequence, enzm_seq, strand)
             if match is not None:
                 strt,end = match
-                polycistron.features.append(SeqFeature(FeatureLocation(strt, end, strand=strand), type=oligo))
+                direction = 'forward' if strand == 1 else 'reverse'
+                add_feature(polycistron, strt, end, 'primer_bind',
+                            label=oligo,
+                            note=oligo + ' ' + direction + ' primer binding region',
+                            strand=strand)
     
     return polycistron

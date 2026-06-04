@@ -50,12 +50,13 @@ def set_ptg_defaults():
         'bb_linkers': '',
         'ad_linkers': '',
         'PTG_transfer': '',
+        'array_annotation': '',
         'poltype': 'ptg',
         'enzm': 'bbsi',
         'tm_range': [55, 65],
         'staticBorderPrimers': False,
         'noBorderPrimers': False,
-        'clr': {'sequence_spacers': '#FFFFFF', 'link': '#FFFFFF', 'poltype_input': '#FFFFFF', 'oligo_index': '#FFFFFF', 'PTG_name': '#FFFFFF'}
+        'clr': {'sequence_spacers': '#FFFFFF', 'array_annotation': '#FFFFFF', 'link': '#FFFFFF', 'poltype_input': '#FFFFFF', 'oligo_index': '#FFFFFF', 'PTG_name': '#FFFFFF'}
     })
 
 
@@ -96,7 +97,7 @@ def sequence():
 
     ## Setting up defaults and variables
     set_ptg_defaults()
-    session['clr'] = {'sequence_spacers': '#FFFFFF', 'link': '#FFFFFF', 'poltype_input': '#FFFFFF', 'oligo_index': '#FFFFFF', 'PTG_name': '#FFFFFF'}
+    session['clr'] = {'sequence_spacers': '#FFFFFF', 'array_annotation': '#FFFFFF', 'link': '#FFFFFF', 'poltype_input': '#FFFFFF', 'oligo_index': '#FFFFFF', 'PTG_name': '#FFFFFF'}
     enzms={'bsai': ['gaggtctcg', 'cgagacctc'], 'bsmbi': ['tgcgtctca', 'tgagacgca'], 'btgzi': ['ctgcgatggagtatgtta', 'taacatactccatcgcag'], 'bbsi': ['ttgaagactt', 'aagtcttcaa']} #templates found in pUU080 (bsai), pUPD2 (bsmbi), Ortega-Escalante et al. 2018 (btgzi), Kun (bbsi)
     
     if request.method == "POST":
@@ -110,6 +111,7 @@ def sequence():
             session['PTG_name'] = request.form["PTG_name"].replace(" ", "_")
             session['oligo_prefix'] = request.form["oligo_prefix"]
             session['oligo_index'] = request.form["oligo_index"]
+            session['array_annotation'] = request.form["array_annotation"].strip()
             session['PTG_transfer'] = request.form["sequence_spacers"]
             session['bb_linkers'] = request.form["bb_linkers"]
             session['ad_linkers'] = request.form["ad_linkers"]
@@ -131,6 +133,8 @@ def sequence():
             ## Catching input errors
             if '/' in session['PTG_name']:
                 raise InvalidUsage("Polycistron name may not contain a '/'", status_code=400, payload={'pge': 'sequence.html', 'box': 'PTG_name'})
+            if session['array_annotation'] == '':
+                raise InvalidUsage("You must describe what this RNA array is designed to target or test", status_code=400, payload={'pge': 'sequence.html', 'box': 'array_annotation'})
             if session['PTG_transfer'] == '':
                 raise InvalidUsage("You must specify a polycistron description", status_code=400, payload={'pge': 'sequence.html', 'box': 'sequence_spacers'})
             if session['oligo_index'] != '' and re.search(r'^[0-9]*$', session['oligo_index']) is None:
@@ -187,7 +191,7 @@ def sequence():
             
         ## If the reset button is pressed, erase all input
         elif request.form['submitPTG'] == 'reset':
-            session['PTG_name'] = session['oligo_prefix'] = session['oligo_index'] = session['bb_linkers'] = session['ad_linkers'] = session['PTG_transfer'] = ''
+            session['PTG_name'] = session['oligo_prefix'] = session['oligo_index'] = session['bb_linkers'] = session['ad_linkers'] = session['PTG_transfer'] = session['array_annotation'] = ''
             return render_template("sequence.html",PTG_transfer=session.get('PTG_transfer', None), session=session)
             
     else:
@@ -327,13 +331,16 @@ def serve_primers():
         
     ## Appending the fragment table to the csv file
     csv += '\nTable of fragments:\n'
-    csv += 'fragment_id,fragment_type,forward_primer,Tm_forw,reverse_primer,Tm_rev\n'
+    csv += 'fragment_id,fragment_type,forward_primer,Tm_forw,reverse_primer,Tm_rev,notes\n'
     for c,fragment in enumerate(session['plcstrn'].parts):
-        csv += session['PTG_name']+'_f'+str(c)+','+fragment.type+','+session['plcstrn'].oligos[c*2][0]+','+str(np.round(fragment.primer_forward_tm,1))+','+session['plcstrn'].oligos[c*2+1][0]+','+str(np.round(fragment.primer_reverse_tm, 1))+'\n'
+        fragment_note = getattr(fragment, 'shared_edge_note', '')
+        csv += session['PTG_name']+'_f'+str(c)+','+fragment.type+','+session['plcstrn'].oligos[c*2][0]+','+str(np.round(fragment.primer_forward_tm,1))+','+session['plcstrn'].oligos[c*2+1][0]+','+str(np.round(fragment.primer_reverse_tm, 1))+','+fragment_note+'\n'
     
     ## Appending the input parameters to the csv file
+    array_annotation = ' '.join(session.get('array_annotation', '').split())
     csv += '\nInput parameters:\n'
     csv += 'Polycistron name:,' + session['PTG_name'] + '\n'
+    csv += 'Array purpose / GenBank annotation:,' + array_annotation + '\n'
     csv += 'Oligos prefix:,' + session['oligo_prefix'] + '\n'
     csv += 'Starting index:,' + session['oligo_index'] + '\n'
     csv += 'Border linkers:,' + '+'.join(session['bb_linkers'] if session['bb_linkers'] else ['tgcc', 'gttt']) + '\n'
@@ -350,7 +357,11 @@ def serve_primers():
         csv += part.replace(";", ",") + '\n'
     
     ## Generating the object for the genbank file
-    sr = SeqRecord(seq=Seq(session['plcstrn'].sequence, alphabet=IUPAC.ambiguous_dna), name=session['PTG_name'], annotations={'date': date.today().strftime("%d-%b-%Y").upper(), 'topology': 'linear'})
+    sr = SeqRecord(seq=Seq(session['plcstrn'].sequence, alphabet=IUPAC.ambiguous_dna), name=session['PTG_name'], annotations={'date': date.today().strftime("%d-%b-%Y").upper(), 'topology': 'linear', 'comment': 'PolyGEN array purpose: ' + array_annotation})
+    sr.features.append(SeqFeature(FeatureLocation(0, len(session['plcstrn'].sequence), strand=1),
+                                  type='misc_feature',
+                                  qualifiers={'label': session['PTG_name'] + ' array purpose',
+                                              'note': 'PolyGEN array purpose: ' + array_annotation}))
     for ftr in session['plcstrn'].features:
         sr.features.append(ftr)
     
@@ -358,6 +369,7 @@ def serve_primers():
     gb_json = {}
     gb_json['polycistron'] = polyToJson(session['plcstrn'])
     gb_json['msg'] = session['msg']
+    gb_json['array_annotation'] = array_annotation
     
     ## Writing everything to a zip file
     in_memory = BytesIO()

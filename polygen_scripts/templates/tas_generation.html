@@ -18,14 +18,14 @@
     <form action='#' method='post'>
       <div class="form-group">
         <label for="exactSpacer">Exact target windows for multiplexing</label>
-        <span class="fa fa-info-circle" data-toggle='tooltip' title="Paste one or more exact target windows. Separate entries with new lines, spaces, commas, semicolons, or vertical bars. TasA expects 18 bp per entry; TasH expects 16 bp per entry."></span>
-        <textarea name="exact_spacer" class="form-control" id="exactSpacer" rows="5" placeholder="TasA: one 18 bp target per line; TasH: one 16 bp target per line" style="background-color:{{ session['clr']['exact_spacer'] }}">{{ session['TAS_exact_spacer'] }}</textarea>
+        <span class="fa fa-info-circle" data-toggle='tooltip' title="Paste one or more exact target windows. Separate entries with new lines, spaces, commas, semicolons, or vertical bars. TasA expects 18 bp per entry; TasH expects 16 bp per entry. For TasH, the first 8 bp become spacer A and the reverse complement of the second 8 bp becomes spacer B."></span>
+        <textarea name="exact_spacer" class="form-control" id="exactSpacer" rows="5" placeholder="TasA: one 18 bp spacer pair; TasH: one 16 bp spacer pair" style="background-color:{{ session['clr']['exact_spacer'] }}">{{ session['TAS_exact_spacer'] }}</textarea>
       </div>
 
       <div class="row">
         <div class="col-12 col-sm-6 col-md-2">
           <label for="tasSystem">System</label>
-          <span class="fa fa-info-circle" data-toggle='tooltip' title="TasA uses two 9 nt spacers; TasH uses two 8 nt spacers."></span><br>
+          <span class="fa fa-info-circle" data-toggle='tooltip' title="TasA uses two 9 nt spacers. TasH uses two 8 nt spacers and wraps them in a 46 nt multiplexing scaffold with full 10 nt edge repeats."></span><br>
           <select name="system" id="tasSystem" onchange="setSystemDefaults(this.value)">
             <option value="TasH" {% if session['TAS_system'] == 'TasH' %}selected="selected"{% endif %}>TasH</option>
             <option value="TasA" {% if session['TAS_system'] == 'TasA' %}selected="selected"{% endif %}>TasA</option>
@@ -41,7 +41,7 @@
         </div>
         <div class="col-12 col-md-6">
           <label for="loop">Loop repeat</label>
-          <span class="fa fa-info-circle" data-toggle='tooltip' title="Locus-specific tigRNA loop repeat between spacer A and spacer B. The scaffold plus both spacers must total 36 nt."></span>
+          <span class="fa fa-info-circle" data-toggle='tooltip' title="Locus-specific tigRNA loop repeat between spacer A and spacer B. The scaffold plus both spacers must total 36 nt for TasA or 46 nt for TasH."></span>
           <input type="text" name="loop" class="form-control" id="loop" value="{{ session['TAS_loop'] }}" style="background-color:{{ session['clr']['scaffold'] }}">
         </div>
         <div class="col-12 col-md-3">
