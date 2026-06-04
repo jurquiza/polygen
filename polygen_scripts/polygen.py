@@ -9,7 +9,10 @@ import threading
 
 from werkzeug.local import LocalProxy
 
-from engine import *
+try:
+    from .engine import *
+except ImportError:
+    from engine import *
 
 
 app = Flask(__name__)
@@ -348,6 +351,9 @@ def serve_primers():
     csv += 'Type of Polycistron:,' + session['poltype'] + '\n'
     csv += 'Restriction enzyme:,' + session['enzm'] + '\n'
     csv += 'Melting temperature range:,' + str(session['tm_range'][0]) + '-' + str(session['tm_range'][1]) + '\n'
+    csv += 'Overhang selection mode:,' + getattr(session['plcstrn'], 'overhang_selection_mode', 'optimal') + '\n'
+    csv += 'Selected overhangs:,' + '+'.join(getattr(session['plcstrn'], 'selected_overhangs', [])) + '\n'
+    csv += 'Overhang warning:,' + getattr(session['plcstrn'], 'overhang_warning', '') + '\n'
     csv += 'Invariable border primers:,' + str(session['staticBorderPrimers']) + '\n'
     csv += 'Omit border primers:,' + str(session['noBorderPrimers']) + '\n'
     
@@ -362,6 +368,13 @@ def serve_primers():
                                   type='misc_feature',
                                   qualifiers={'label': session['PTG_name'] + ' array purpose',
                                               'note': 'PolyGEN array purpose: ' + array_annotation}))
+    overhang_note = 'PolyGEN overhang selection mode: ' + getattr(session['plcstrn'], 'overhang_selection_mode', 'optimal') + '; selected overhangs=' + ','.join(getattr(session['plcstrn'], 'selected_overhangs', []))
+    if getattr(session['plcstrn'], 'overhang_warning', ''):
+        overhang_note += '; ' + getattr(session['plcstrn'], 'overhang_warning', '')
+    sr.features.append(SeqFeature(FeatureLocation(0, len(session['plcstrn'].sequence), strand=1),
+                                  type='misc_feature',
+                                  qualifiers={'label': 'PolyGEN overhang selection',
+                                              'note': overhang_note}))
     for ftr in session['plcstrn'].features:
         sr.features.append(ftr)
     
@@ -370,6 +383,9 @@ def serve_primers():
     gb_json['polycistron'] = polyToJson(session['plcstrn'])
     gb_json['msg'] = session['msg']
     gb_json['array_annotation'] = array_annotation
+    gb_json['overhang_selection_mode'] = getattr(session['plcstrn'], 'overhang_selection_mode', 'optimal')
+    gb_json['overhang_warning'] = getattr(session['plcstrn'], 'overhang_warning', '')
+    gb_json['selected_overhangs'] = getattr(session['plcstrn'], 'selected_overhangs', [])
     
     ## Writing everything to a zip file
     in_memory = BytesIO()
@@ -413,5 +429,9 @@ def handle_invalid_usage(error):
                            tas_systems=TAS_SYSTEMS)
 
 
+def main():
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) ##host 0.0.0.0 is important for docker container
+
+
 if __name__=='__main__':
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) ##host 0.0.0.0 is important for docker container
+    main()

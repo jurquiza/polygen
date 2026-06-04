@@ -7,6 +7,13 @@
       <p style="color:red;"> {{ session['msg'] }} </p>
     {% endif %}
   </div>
+  {% if session['plcstrn'].overhang_warning %}
+  <div class="row">
+    <div class="col">
+      <p style="color:#B35C00; font-weight:bold;">{{ session['plcstrn'].overhang_warning }}</p>
+    </div>
+  </div>
+  {% endif %}
   <div class="row">
     <div class="col">
       <div class="form-group" align="center">

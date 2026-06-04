@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "polygen"
+version = "0.1.0"
+description = "PolyGEN designs multiplexed RNA arrays and Golden Gate oligos."
+readme = "README.md"
+requires-python = ">=3.9,<3.10"
+license = {file = "License.txt"}
+authors = [
+    {name = "PolyGEN contributors"}
+]
+dependencies = [
+    "biopython==1.77",
+    "click==8.0.4",
+    "dominate==2.6.0",
+    "Flask==1.1.2",
+    "Flask-Bootstrap==3.3.7.1",
+    "Flask-WTF==0.14.3",
+    "gunicorn==22.0.0",
+    "itsdangerous==1.1.0",
+    "Jinja2==3.0.3",
+    "MarkupSafe==2.1.1",
+    "numpy==1.21.1",
+    "pandas>=1.3.0,<3",
+    "python-dateutil==2.8.2",
+    "pytz==2022.1",
+    "six==1.16.0",
+    "visitor==0.1.3",
+    "Werkzeug==2.0.3",
+    "WTForms==3.0.1"
+]
+
+[project.scripts]
+polygen = "polygen_scripts.polygen:main"
+
+[tool.setuptools.packages.find]
+include = ["polygen_scripts*"]
+exclude = ["polygen_scripts.testing*", "polygen_scripts.static.build*"]
+
+[tool.setuptools.package-data]
+polygen_scripts = [
+    "templates/*.html",
+    "static/*",
+    "overhangsets/*.csv",
+    "protocol.txt",
+    "source/*.rst"
+]

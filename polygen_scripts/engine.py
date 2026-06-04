@@ -135,7 +135,10 @@ def polyToJson(poly):
         "parts": [p.to_json() for p in p.parts],
         "oligos": p.oligos,
         "features": ftrs,
-        "warning": p.warning
+        "warning": p.warning,
+        "overhang_selection_mode": getattr(p, 'overhang_selection_mode', 'optimal'),
+        "overhang_warning": getattr(p, 'overhang_warning', ''),
+        "selected_overhangs": getattr(p, 'selected_overhangs', [])
     }
 
 def reverse_complement(sequence):
@@ -497,6 +500,23 @@ def tigRNA_spacer_ranges(sequence):
                 sequence[shared_loop_start:shared_loop_end] == loop and sequence.endswith(edge_3)):
             return [(0, spacer_len), (shared_spacer_b_start, shared_spacer_b_end)]
     return [(0, len(sequence))]
+
+def all_curated_overhangs():
+    '''Returns all unique 4 bp overhangs present in the curated overhang tables.'''
+
+    overhangs = set()
+    for filename in os.listdir(OVERHANGSET_DIR):
+        if not filename.startswith('setsof') or not filename.endswith('.csv'):
+            continue
+        with open(os.path.join(OVERHANGSET_DIR, filename), 'r') as f:
+            reader = csv.reader(f, delimiter=',')
+            next(reader, None)
+            for row in reader:
+                for overhang in row:
+                    overhang = overhang.strip().lower()
+                    if len(overhang) == 4 and re.search(r'^[acgt]*$', overhang) is not None:
+                        overhangs.add(overhang)
+    return sorted(overhangs)
 
 def primer_annealing_tm(primer, max_ann_len=30):
     '''
@@ -940,6 +960,9 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
     # must overwrite with empty list because features list would accumulate across runs in same session through append command
     polycistron.features = [] 
     polycistron.oligos = []
+    polycistron.overhang_selection_mode = 'optimal'
+    polycistron.overhang_warning = ''
+    polycistron.selected_overhangs = []
 
     
     ## Go through parts and write all known annotations into list   
@@ -1081,7 +1104,18 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
                 break
         
     if gg_opt is None:
-        raise InvalidUsage("No combination of optimal linkers possible for the provided existing linkers", status_code=400, payload={'pge': 'sequence.html', 'box': 'link'})
+        disallowed = set(ad_linkers + bb_linkers + [reverse_complement(i) for i in ad_linkers + bb_linkers])
+        curated = set(all_curated_overhangs())
+        curated.update([reverse_complement(o) for o in list(curated)])
+        rescue_overhangs = sorted([o for o in curated if o not in disallowed])
+        rescue_opt = golden_gate_optimization(parts_list, [rescue_overhangs], poltype)
+        if rescue_opt is None:
+            raise InvalidUsage("No combination of optimal or rescue linkers possible for the provided existing linkers", status_code=400, payload={'pge': 'sequence.html', 'box': 'link'})
+        gg_opt = rescue_opt
+        polycistron.overhang_selection_mode = 'rescue'
+        polycistron.overhang_warning = 'Rescue overhang mode was used. The selected overhangs are individually present in curated overhang tables, but this exact overhang collection was not found as a validated optimal set. Assembly may fail and should be experimentally validated.'
+        polycistron.warning = polycistron.overhang_warning
+    polycistron.selected_overhangs = [g[-4:] for g in gg_opt]
     
     
     ## Modify sequences and design primers

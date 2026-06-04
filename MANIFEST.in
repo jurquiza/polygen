@@ -1,0 +1,5 @@
+recursive-include polygen_scripts/templates *.html
+recursive-include polygen_scripts/static *
+recursive-include polygen_scripts/overhangsets *.csv
+include polygen_scripts/protocol.txt
+recursive-include polygen_scripts/source *.rst

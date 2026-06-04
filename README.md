@@ -40,6 +40,8 @@ The `tigRNA` architecture does not add tRNAs and does not add a Cpf1 direct repe
 
 For tigRNA oligo design, PolyGEN chooses internal Golden Gate overhangs from spacer A or spacer B, so fixed edge and loop repeat regions are not used as variable assembly overhang sources. Spacer-A splits are accepted only when enough left-side sequence remains for the oligo-extension fragment. Each fragment is produced from a forward/reverse oligo pair with an overlapping region that can be filled in by polymerase. The reported oligo melting temperature for tigRNA fragments is calculated only from that shared overlap, not from the full oligo sequence.
 
+If no complete optimal overhang set can be found, PolyGEN enters rescue overhang mode. In rescue mode, it still chooses overhangs that appear in curated PolyGEN overhang tables, but it flags that the exact selected collection was not found as a validated optimal set. The warning is shown on the oligo page and written into the CSV, raw JSON and GenBank outputs.
+
 The `Reuse PTG border oligos` option is applied only to PTG/Cas9 tRNA-processed assemblies. These reusable border oligos are specific to the selected restriction enzyme and 4 bp border linkers. CA and `tigRNA` assemblies do not use the tRNA architecture, so PolyGEN always designs new target-specific border oligos for those modes.
 
 The GenBank output annotates each mature tigRNA with edge repeat 5 prime, spacer A, loop repeat, spacer B and edge repeat 3 prime features.
@@ -67,6 +69,19 @@ In the terminal, run through the following pipeline
 - execute `docker-compose up` (requires docker desktop to be active)
 
 In the browser, open localhost:5000
+
+## Pip installation
+
+PolyGEN can also be installed directly from the repository for local Python development:
+
+```bash
+python3.9 -m venv .venv
+. .venv/bin/activate
+pip install -e .
+polygen
+```
+
+The `polygen` command starts the Flask app on `0.0.0.0:${PORT:-5000}`. The package includes the web templates, static assets, overhang tables and protocol file needed by the app.
 
 ## Cloud Run / container deployment
 
