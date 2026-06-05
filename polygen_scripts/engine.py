@@ -267,6 +267,8 @@ PBS_MAX_LEN = 17
 PEG_PBS_LENGTHS = {}
 TIGRNA_MIN_SPLIT_LEN = 12
 MIN_FILL_IN_OVERLAP_TM = 45
+TIGRNA_MIN_OLIGO_CORE_LEN = 30
+TIGRNA_MAX_OLIGO_CORE_LEN = 60
 TAS_SYSTEMS = {
     'TasA': {
         'spacer_len': 9,
@@ -610,6 +612,55 @@ def primer_pair_overlap_tm(forward_primer, reverse_primer):
     return mt.Tm_NN(overlap, nn_table=mt.DNA_NN3, dnac1=125, dnac2=125, Na=50)
 
 
+def balanced_fragment_primers(fragment_sequence, enzm_pair, min_tm=MIN_FILL_IN_OVERLAP_TM, min_core_len=TIGRNA_MIN_OLIGO_CORE_LEN, max_core_len=TIGRNA_MAX_OLIGO_CORE_LEN):
+    '''
+    Designs fill-in oligos for one short Golden Gate fragment.
+
+    The fragment sequence is expected to include the forward Type IIS template
+    at the 5 prime end and the reverse Type IIS template at the 3 prime end.
+    Primer arms are extended beyond the historical 30 bp default only when the
+    fragment is long enough that the two oligos would otherwise overlap weakly.
+    '''
+
+    fragment_sequence = fragment_sequence.lower()
+    left_enz,right_enz = enzm_pair
+    if not fragment_sequence.startswith(left_enz) or not fragment_sequence.endswith(right_enz):
+        forward = fragment_sequence[:min(len(fragment_sequence), len(left_enz)+min_core_len)]
+        reverse = reverse_complement(fragment_sequence[max(0, len(fragment_sequence)-len(right_enz)-min_core_len):])
+        return forward, reverse
+
+    core = fragment_sequence[len(left_enz):len(fragment_sequence)-len(right_enz)]
+    if core == '':
+        return left_enz, reverse_complement(right_enz)
+
+    min_len = min(min_core_len, len(core))
+    max_len = min(max_core_len, len(core))
+    best = None
+    best_score = None
+    for f_len in range(min_len, max_len+1):
+        for r_len in range(min_len, max_len+1):
+            if f_len + r_len < len(core) + 4:
+                continue
+            forward = left_enz + core[:f_len]
+            reverse = reverse_complement(core[len(core)-r_len:] + right_enz)
+            overlap_tm = primer_pair_overlap_tm(forward, reverse)
+            score = (1 if overlap_tm >= min_tm else 0,
+                     overlap_tm,
+                     -max(f_len, r_len),
+                     -(f_len + r_len))
+            if best_score is None or score > best_score:
+                best = (forward, reverse)
+                best_score = score
+            if overlap_tm >= min_tm:
+                return forward, reverse
+
+    if best is not None:
+        return best
+    forward = left_enz + core[:min_len]
+    reverse = reverse_complement(core[len(core)-min_len:] + right_enz)
+    return forward, reverse
+
+
 def sequence_overlap_tm(seq_a, seq_b):
     '''Calculates Tm for the longest shared sequence between two same-strand oligo cores.'''
 
@@ -645,9 +696,7 @@ def overhang_combination_overlap_tms(parts_list, comb, poltype_opt='ptg', max_an
             current_seq = enzms[enzm][0] + current_seq[cut-4:] + parts_list[x+1].sequence.lower()
     elif poltype_opt == 'tigRNA':
         current_seq = enzms[enzm][0] + reverse_complement(bb_linkers[0]) + parts_list[0].sequence.lower()
-        forward_primers = [None for i in parts_list]
-        reverse_primers = [None for i in parts_list]
-        forward_primers[0] = enzms[enzm][0] + reverse_complement(bb_linkers[0]) + parts_list[0].sequence.lower()[:max_ann_len]
+        fragment_sequences = []
         for x in range(len(parts_list)-1):
             cut = current_seq.find(comb[x]) + len(comb[x])
             if cut < len(comb[x]):
@@ -660,14 +709,11 @@ def overhang_combination_overlap_tms(parts_list, comb, poltype_opt='ptg', max_an
             if (getattr(parts_list[x+1], 'shared_edge_junction', None) and
                     parts_list[x+1].shared_edge_junction.lower() not in current_tail + parts_list[x+1].sequence.lower()[:len(parts_list[x+1].shared_edge_5)]):
                 return []
-            current_start = current_seq.find(parts_list[x].template_sequence)
-            reverse_primers[x] = reverse_complement(current_seq[current_start:cut] + enzms[enzm][1])
-            forward_primers[x+1] = enzms[enzm][0] + current_tail + parts_list[x+1].sequence.lower()[:max_ann_len]
+            fragment_sequences.append(current_seq[:cut] + enzms[enzm][1])
             current_seq = enzms[enzm][0] + current_tail + parts_list[x+1].sequence.lower()
-        reverse_primers[-1] = reverse_complement(current_seq[-max_ann_len:] + bb_linkers[-1] + enzms[enzm][1])
-        for forward_primer,reverse_primer in zip(forward_primers, reverse_primers):
-            if forward_primer is None or reverse_primer is None:
-                return []
+        fragment_sequences.append(current_seq + bb_linkers[-1] + enzms[enzm][1])
+        for fragment_sequence in fragment_sequences:
+            forward_primer,reverse_primer = balanced_fragment_primers(fragment_sequence, enzms[enzm])
             tms.append(primer_pair_overlap_tm(forward_primer, reverse_primer))
     return tms
 
@@ -1662,7 +1708,7 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
                     if getattr(parts_list[i+1], 'full_tigRNA_unit', None) and getattr(parts_list[i+1], 'shared_edge_5', None) and parts_list[i+1].shared_edge_5.lower() not in current_tail:
                         raise InvalidUsage("Shared TasH edge repeat was not retained in the oligo overlap", status_code=400, payload={'pge': 'sequence.html', 'box': 'sequence_spacers'})
                     if getattr(parts_list[i+1], 'shared_edge_junction', None) and parts_list[i+1].shared_edge_junction.lower() not in current_tail + parts_list[i+1].sequence[:len(parts_list[i+1].shared_edge_5)]:
-                        raise InvalidUsage("Shared TasA edge junction was not retained in the oligo overlap", status_code=400, payload={'pge': 'sequence.html', 'box': 'sequence_spacers'})
+                        raise InvalidUsage("Required Tas edge junction was not retained in the oligo overlap", status_code=400, payload={'pge': 'sequence.html', 'box': 'sequence_spacers'})
                     parts_list[i+1].shared_edge_overlap = current_tail
                     parts_list[i].primer_reverse = reverse_complement(parts_list[i].sequence[current_start:current_cut] + enzms[enzm][1])
                     parts_list[i+1].primer_forward = enzms[enzm][0] + current_tail + parts_list[i+1].sequence[:max_ann_len]
@@ -1683,12 +1729,15 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
                 if getattr(parts_list[i+1], 'full_tigRNA_unit', None) and getattr(parts_list[i+1], 'shared_edge_5', None) and parts_list[i+1].shared_edge_5.lower() not in current_tail:
                     raise InvalidUsage("Shared TasH edge repeat was not retained in the oligo overlap", status_code=400, payload={'pge': 'sequence.html', 'box': 'sequence_spacers'})
                 if getattr(parts_list[i+1], 'shared_edge_junction', None) and parts_list[i+1].shared_edge_junction.lower() not in current_tail + parts_list[i+1].sequence[:len(parts_list[i+1].shared_edge_5)]:
-                    raise InvalidUsage("Shared TasA edge junction was not retained in the oligo overlap", status_code=400, payload={'pge': 'sequence.html', 'box': 'sequence_spacers'})
+                    raise InvalidUsage("Required Tas edge junction was not retained in the oligo overlap", status_code=400, payload={'pge': 'sequence.html', 'box': 'sequence_spacers'})
                 parts_list[i+1].shared_edge_overlap = current_tail
                 parts_list[i].primer_reverse = reverse_complement(parts_list[i].sequence[current_start:current_cut] + enzms[enzm][1])
                 parts_list[i+1].primer_forward = enzms[enzm][0] + current_tail + parts_list[i+1].sequence[:max_ann_len]
                 parts_list[i+1].sequence = enzms[enzm][0] + current_tail + parts_list[i+1].sequence
                 parts_list[i].sequence = parts_list[i].sequence[:current_cut] + enzms[enzm][1]
+
+        for part in parts_list:
+            part.primer_forward,part.primer_reverse = balanced_fragment_primers(part.sequence, enzms[enzm])
                             
     ## Format enzyme cutting site in CAPITAL letters
     for o in parts_list:
@@ -2054,12 +2103,12 @@ def PTGbldr(name, inserts, poltype='ptg'):
                     part.shared_edge_5_system = system
                     part.shared_edge_note = 'Leading ' + edge_5 + ' edge repeat is shared with the previous TasH unit and is not duplicated in the assembled array.'
                     break
-                elif system == 'TasA' and previous_edge_3 == edge_3 and sequence.upper().startswith(edge_5.upper()) and edge_5.upper() != edge_3.upper():
+                elif previous_edge_3 == edge_3 and sequence.upper().startswith(edge_5.upper()) and edge_5.upper() != edge_3.upper():
                     part.shared_edge_3 = edge_3
                     part.shared_edge_5 = edge_5
                     part.shared_edge_5_system = system
                     part.shared_edge_junction = edge_3 + edge_5
-                    part.shared_edge_note = 'Upstream ' + edge_3 + ' right edge and downstream ' + edge_5 + ' left edge form the shared TasA junction ' + part.shared_edge_junction + '.'
+                    part.shared_edge_note = 'Upstream ' + edge_3 + ' right edge and downstream ' + edge_5 + ' left edge form the required ' + system + ' edge junction ' + part.shared_edge_junction + '.'
                     break
             previous_edge_3 = None
             for system,config in TAS_SYSTEMS.items():
