@@ -152,7 +152,7 @@
         <span class="fa fa-info-circle" data-toggle='tooltip' title="Specify the contents of your polycistron here. First state the RNA type, followed by a semicolon and sequence. Separate parts by a vertical line. Use tigRNA;sequence with the tigRNA polycistron type."></span>
         <p class="form-example-text">
         This is a functional example: gRNA;ATAGGCTCCGATCGTGAACC|gRNA;GGAATTTGGCGAGGCCTATT|smRNA;CGTATGGCGTATCGGATTCTAT<br>
-        tigRNA mode example: tigRNA;AAGCGAGTCAAAGGCAATAAGACAACCACGGAGACGAAGCGAGTCA|tigRNA;AAGCGAGTCATTAACGCGAAGACAACCAAGATTAGCAAGCGAGTCA<br>
+        tigRNA mode example: tigRNA;GAGCGAGTTAAAGCGGAGAAAACAATCATCGATTGAAAGCGAGCCA|tigRNA;GAGCGAGTTATTAACGCGAAAACAATCAAGATTAGCAAGCGAGCCA<br>
         This will produce an error: smRNA;TTGAAGTAAATACAAACAGG|gRNA;TTGTATCAAAAATGCAAGCT|gRNA;TTTTAGTAACAATAAGAGAG</p>
         {% if session['PTG_transfer'] %}
             <textarea class="form-control" name="sequence_spacers" id="ControlTextarea3" rows="5" placeholder='e.g. pegRNA;ATGCATGC|gRNA;ATGCATGC|smRNA;ATGCATGC' style="background-color:{{ session['clr']['sequence_spacers'] }}">{{ session['PTG_transfer'] }}</textarea>

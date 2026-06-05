@@ -28,7 +28,7 @@ PolyGEN includes a Tas guide design page for TIGR-Tas guide RNAs. It currently s
 - GenBank exports annotate downstream TasA units with an inherited guide context spanning the upstream AGTG right edge plus the current AACCG-left-edge unit.
 - Exact target windows are 18 bp for TasA and 16 bp for TasH.
 - Exact target windows can be separated with new lines, spaces, commas, semicolons or vertical bars.
-- Scaffold fields can be edited for locus-specific tigRNA scaffolds. DNA or RNA bases are accepted, but the final mature tigRNA must be 36 nt for TasA or the multiplexing unit must be 46 nt for TasH.
+- Scaffold fields can be edited for locus-specific tigRNA scaffolds. DNA or RNA bases are accepted, but the final mature tigRNA must be 36 nt for TasA or the multiplexing unit must be 46 nt for TasH. The TasH default is the asymmetric unit `GAGCGAGTTA` + spacer A + `AAAACAATCA` + spacer B + `AAGCGAGCCA`.
 
 Designed tigRNAs can be selected and sent directly to the PTG page using the `tigRNA` architecture. Only checked rows are transferred; if no rows are checked, the full generated set is transferred. In this architecture, sequences are provided as mature tigRNAs:
 
@@ -52,11 +52,11 @@ The GenBank output annotates each mature tigRNA with edge repeat 5 prime, spacer
 
 PolyGEN annotates generated GenBank files with readable labels and notes for each array unit, spacer, scaffold, tRNA, direct repeat, tigRNA subfeature, pegRNA PBS/RT-template segment and primer-binding site. These labels preserve the link between each RNA part and the sequence it targets after the array has been assembled.
 
-For TasH multiplexing units, GenBank exports also mark the processing cuts inside the identical edge repeats and annotate the predicted mature tigRNA retained after edge-repeat maturation.
+For TasH multiplexing units, GenBank exports annotate the left edge repeat, spacer A, loop repeat, spacer B and right edge repeat. If an older identical-edge TasH scaffold is supplied, PolyGEN can also mark the processing cuts inside those identical edge repeats.
 
-For TasH arrays, adjacent units share the identical edge repeat at each junction. PolyGEN keeps the first full unit and removes the duplicated leading edge repeat from each subsequent TasH unit during array assembly, while annotating the shared repeat as part of both neighboring units.
+For TasH arrays with identical left and right edge repeats, adjacent units share the identical edge repeat at each junction. The current asymmetric TasH default is assembled as complete repeated units.
 
-TasH oligo design uses the same shared-edge model: downstream fragment forward oligos include the shared edge-repeat overlap from the previous unit, and the fragment table notes when a leading edge repeat was shared rather than duplicated.
+TasH oligo design follows the selected scaffold model: asymmetric defaults are split across complete units, while identical-edge custom scaffolds can still use the shared-edge path.
 
 _____________
 

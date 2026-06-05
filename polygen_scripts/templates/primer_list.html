@@ -2,20 +2,43 @@
 
 {% block table %}
 <div class="container">
-  <div class="row">
-    {% if session['msg'] %}
-      <p style="color:red;"> {{ session['msg'] }} </p>
-    {% endif %}
-  </div>
-  {% if session['plcstrn'].overhang_warning %}
-  <div class="row">
-    <div class="col">
-      <p style="color:#B35C00; font-weight:bold;">{{ session['plcstrn'].overhang_warning }}</p>
+  {% set general_msg = session['msg'] %}
+  {% set overhang_warning = session['plcstrn'].overhang_warning %}
+  {% if overhang_warning %}
+    <div class="alert alert-warning" role="alert">
+      <strong>Assembly warning:</strong> {{ overhang_warning }}
     </div>
-  </div>
+  {% elif general_msg %}
+    <div class="alert alert-danger" role="alert">
+      {{ general_msg }}
+    </div>
   {% endif %}
-  <div class="row">
-    <div class="col">
+	  {% if session['plcstrn'].overhang_statuses %}
+	  <div class="row">
+	    <div class="col">
+	      <div style="margin: 10px 0 18px 0;">
+	        <strong>Selected internal overhangs:</strong>
+	        {% for overhang in session['plcstrn'].overhang_statuses %}
+	          {% if overhang.status == 'tm_rescue' %}
+	            {% set badge_color = '#D95F02' %}
+	            {% set badge_bg = '#FFF0E6' %}
+	          {% elif overhang.status == 'collection_rescue' %}
+	            {% set badge_color = '#B35C00' %}
+	            {% set badge_bg = '#FFF6D8' %}
+	          {% else %}
+	            {% set badge_color = '#1B7F3A' %}
+	            {% set badge_bg = '#E8F6EC' %}
+	          {% endif %}
+	          <span title="{{ overhang.note }}" style="display:inline-block; margin:4px 4px 0 0; padding:4px 8px; border:1px solid {{ badge_color }}; border-radius:4px; color:{{ badge_color }}; background:{{ badge_bg }}; font-weight:bold;">
+	            {{ overhang.index }}: {{ overhang.overhang|upper }} ({{ overhang.status.replace('_', ' ') }})
+	          </span>
+	        {% endfor %}
+	      </div>
+	    </div>
+	  </div>
+	  {% endif %}
+	  <div class="row">
+	    <div class="col">
       <div class="form-group" align="center">
         <a href={{ url_for('serve_primers') }} class="btn btn-primary">Download</a>
       </div>

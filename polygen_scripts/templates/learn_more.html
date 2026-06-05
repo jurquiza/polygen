@@ -147,7 +147,7 @@ text-align: justify
 	      </p>
 
 	      <p>
-	      The scaffold fields can be edited when a locus-specific tigRNA scaffold is required. DNA or RNA bases are accepted. The combined edge-repeat, loop-repeat and spacer lengths must produce a 36 nt TasA mature tigRNA or a 46 nt TasH multiplexing unit. For TasH, maturation is expected to cut within the edge repeats so the processed tigRNA keeps the second half of the first edge repeat and the first half of the second edge repeat.
+	      The scaffold fields can be edited when a locus-specific tigRNA scaffold is required. DNA or RNA bases are accepted. The combined edge-repeat, loop-repeat and spacer lengths must produce a 36 nt TasA mature tigRNA or a 46 nt TasH multiplexing unit. TasH defaults use the asymmetric unit shown in the manual figure, with a 10 nt left edge repeat, 10 nt loop and 10 nt right edge repeat.
 	      </p>
 
 	      <p>
@@ -179,15 +179,15 @@ text-align: justify
 	      </p>
 
 	      <p>
-	      For TasH multiplexing units, PolyGEN also annotates the processing cut positions inside the identical edge repeats and labels the predicted mature tigRNA produced after processing. This distinguishes the full array unit from the guide sequence retained after edge-repeat maturation.
+	      For TasH multiplexing units, PolyGEN annotates the left edge repeat, spacer A, loop repeat, spacer B and right edge repeat. If a user supplies an older identical-edge TasH scaffold, PolyGEN can also annotate the predicted processing cuts inside those identical edge repeats.
 	      </p>
 
 	      <p>
-	      In TasH multiplex arrays, adjacent units share the identical edge repeat at their junction. PolyGEN therefore keeps the first full unit and removes the duplicated leading edge repeat from each subsequent TasH unit when assembling the final array, while still annotating the shared edge as the upstream edge for the next processed tigRNA.
+	      In TasH multiplex arrays with identical left and right edge repeats, adjacent units share the repeated edge at their junction. For the current asymmetric TasH default, each tigRNA unit is assembled as a complete edge-spacer-loop-spacer-edge unit.
 	      </p>
 
 	      <p>
-	      TasH oligo design follows the same shared-edge model. The forward oligo for a downstream TasH fragment carries the shared edge-repeat overlap inherited from the previous unit, and the fragment table marks downstream units whose leading edge repeat was shared rather than duplicated.
+	      TasH oligo design follows the scaffold model used for the selected units, so asymmetric TasH defaults are split across complete unit sequences while identical-edge custom scaffolds can still use the shared-edge path.
 	      </p>
 
 

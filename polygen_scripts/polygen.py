@@ -2,6 +2,7 @@ from flask import Flask, redirect, url_for, render_template, request, Response, 
 from io import BytesIO, StringIO
 from zipfile import ZipFile
 from datetime import date,time
+import csv as csv_module
 import os, tempfile
 import copy
 import secrets
@@ -82,8 +83,29 @@ def set_tas_defaults():
         'TAS_loop': TAS_SYSTEMS['TasH']['loop'],
         'TAS_edge_3': TAS_SYSTEMS['TasH']['edge_3'],
         'TAS_exact_spacer': '',
-        'TAS_guides': []
+        'TAS_guides': [],
+        'TAS_selected_guides': []
     })
+
+
+def normalize_ptg_parts(ptg_transfer):
+    return [part.strip() for part in ptg_transfer.replace(" ", "").replace("\r\n", "").replace("\n", "").split("|") if part.strip()]
+
+
+def current_tas_export_guides():
+    guides = session.get('TAS_selected_guides', [])
+    if session.get('poltype') != 'tigRNA' or not guides:
+        return []
+    current_parts = normalize_ptg_parts(session.get('PTG_transfer', ''))
+    guide_parts = normalize_ptg_parts('|'.join([guide.get('ptg_part', '') for guide in guides]))
+    return guides if current_parts == guide_parts else []
+
+
+def csv_rows(rows):
+    output = StringIO()
+    writer = csv_module.writer(output)
+    writer.writerows(rows)
+    return output.getvalue()
 
 @app.route("/")
 def home():
@@ -295,6 +317,7 @@ def tas_generation():
                                            75,
                                            session['TAS_exact_spacer'])
             session['TAS_guides'] = guides
+            session['TAS_selected_guides'] = guides
             session['msg'] = msg
             session['PTG_transfer'] = '|'.join([guide['ptg_part'] for guide in guides])
             return render_template("tas_generation.html", TAS_transfer=session.get('TAS_sequence', None), session=session, tas_systems=TAS_SYSTEMS)
@@ -305,11 +328,12 @@ def tas_generation():
             if guides == []:
                 guides = session.get('TAS_guides', [])
             session['PTG_transfer'] = '|'.join([guide['ptg_part'] for guide in guides])
+            session['TAS_selected_guides'] = guides
             session['poltype'] = 'tigRNA'
             return redirect(url_for('sequence'))
 
         elif request.form['submitTAS'] == 'reset':
-            for key in ['TAS_sequence', 'TAS_exact_spacer', 'TAS_guides']:
+            for key in ['TAS_sequence', 'TAS_exact_spacer', 'TAS_guides', 'TAS_selected_guides']:
                 session[key] = '' if key == 'TAS_sequence' else []
             session['TAS_exact_spacer'] = ''
             return render_template("tas_generation.html", TAS_transfer=session.get('TAS_sequence', None), session=session, tas_systems=TAS_SYSTEMS)
@@ -353,6 +377,7 @@ def serve_primers():
     csv += 'Melting temperature range:,' + str(session['tm_range'][0]) + '-' + str(session['tm_range'][1]) + '\n'
     csv += 'Overhang selection mode:,' + getattr(session['plcstrn'], 'overhang_selection_mode', 'optimal') + '\n'
     csv += 'Selected overhangs:,' + '+'.join(getattr(session['plcstrn'], 'selected_overhangs', [])) + '\n'
+    csv += 'Overhang status:,' + '+'.join([item.get('overhang', '') + ':' + item.get('status', '') for item in getattr(session['plcstrn'], 'overhang_statuses', [])]) + '\n'
     csv += 'Fill-in overlap Tm values:,' + '+'.join([str(round(tm, 1)) for tm in getattr(session['plcstrn'], 'fill_in_overlap_tms', [])]) + '\n'
     csv += 'Overhang warning:,' + getattr(session['plcstrn'], 'overhang_warning', '') + '\n'
     csv += 'Invariable border primers:,' + str(session['staticBorderPrimers']) + '\n'
@@ -362,6 +387,38 @@ def serve_primers():
     PTG_input = session['PTG_transfer'].replace(" ", "").replace("\r\n", "").split("|")
     for part in PTG_input:
         csv += part.replace(";", ",") + '\n'
+
+    tas_export_guides = current_tas_export_guides()
+    if tas_export_guides:
+        tas_rows = [[
+            'guide_name',
+            'system',
+            'protospacer_region',
+            'strand',
+            'source',
+            'start',
+            'end',
+            'spacer_a',
+            'spacer_b',
+            'tigRNA_DNA',
+            'tigRNA_RNA'
+        ]]
+        for guide in tas_export_guides:
+            tas_rows.append([
+                guide.get('name', ''),
+                guide.get('system', ''),
+                guide.get('target', ''),
+                guide.get('strand', ''),
+                guide.get('source', ''),
+                guide.get('start', ''),
+                guide.get('end', ''),
+                guide.get('spacer_a', ''),
+                guide.get('spacer_b', ''),
+                guide.get('tigRNA_dna', ''),
+                guide.get('tigRNA', '')
+            ])
+        csv += '\nTas guide target windows:\n'
+        csv += csv_rows(tas_rows)
     
     ## Generating the object for the genbank file
     sr = SeqRecord(seq=Seq(session['plcstrn'].sequence, alphabet=IUPAC.ambiguous_dna), name=session['PTG_name'], annotations={'date': date.today().strftime("%d-%b-%Y").upper(), 'topology': 'linear', 'comment': 'PolyGEN array purpose: ' + array_annotation})
@@ -372,6 +429,8 @@ def serve_primers():
     overhang_note = 'PolyGEN overhang selection mode: ' + getattr(session['plcstrn'], 'overhang_selection_mode', 'optimal') + '; selected overhangs=' + ','.join(getattr(session['plcstrn'], 'selected_overhangs', []))
     if getattr(session['plcstrn'], 'fill_in_overlap_tms', []):
         overhang_note += '; fill-in overlap Tm values=' + ','.join([str(round(tm, 1)) for tm in getattr(session['plcstrn'], 'fill_in_overlap_tms', [])])
+    if getattr(session['plcstrn'], 'overhang_statuses', []):
+        overhang_note += '; overhang status=' + '; '.join([item.get('overhang', '') + ':' + item.get('status', '') for item in getattr(session['plcstrn'], 'overhang_statuses', [])])
     if getattr(session['plcstrn'], 'overhang_warning', ''):
         overhang_note += '; ' + getattr(session['plcstrn'], 'overhang_warning', '')
     sr.features.append(SeqFeature(FeatureLocation(0, len(session['plcstrn'].sequence), strand=1),
@@ -389,7 +448,9 @@ def serve_primers():
     gb_json['overhang_selection_mode'] = getattr(session['plcstrn'], 'overhang_selection_mode', 'optimal')
     gb_json['overhang_warning'] = getattr(session['plcstrn'], 'overhang_warning', '')
     gb_json['selected_overhangs'] = getattr(session['plcstrn'], 'selected_overhangs', [])
+    gb_json['overhang_statuses'] = getattr(session['plcstrn'], 'overhang_statuses', [])
     gb_json['fill_in_overlap_tms'] = getattr(session['plcstrn'], 'fill_in_overlap_tms', [])
+    gb_json['tas_guide_target_windows'] = tas_export_guides
     
     ## Writing everything to a zip file
     in_memory = BytesIO()

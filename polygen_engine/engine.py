@@ -139,6 +139,7 @@ def polyToJson(poly):
         "overhang_selection_mode": getattr(p, 'overhang_selection_mode', 'optimal'),
         "overhang_warning": getattr(p, 'overhang_warning', ''),
         "selected_overhangs": getattr(p, 'selected_overhangs', []),
+        "overhang_statuses": getattr(p, 'overhang_statuses', []),
         "fill_in_overlap_tms": getattr(p, 'fill_in_overlap_tms', [])
     }
 
@@ -278,12 +279,12 @@ TAS_SYSTEMS = {
     },
     'TasH': {
         'spacer_len': 8,
-        'edge_5': 'AAGCGAGTCA',
-        'loop': 'AAGACAACCA',
-        'edge_3': 'AAGCGAGTCA',
+        'edge_5': 'GAGCGAGTTA',
+        'loop': 'AAAACAATCA',
+        'edge_3': 'AAGCGAGCCA',
         'spacer_a_transform': 'provided',
         'spacer_b_transform': 'reverse_complement',
-        'note': 'TasH uses two 8 nt programmable spacers in the multiplexing scaffold; spacer B is reverse-complemented from the target window.'
+        'note': 'TasH uses two 8 nt programmable spacers in an asymmetric multiplexing scaffold; spacer B is reverse-complemented from the target window.'
     }
 }
 
@@ -385,14 +386,6 @@ def annotate_tigRNA_features(polycistron, start, sequence, shared_edge_5_start=N
                 append_tig_feature(loop_start, loop_end, system + ' tigRNA loop repeat')
                 append_tig_feature(spacer_b_start, spacer_b_end, system + ' tigRNA spacer B')
                 append_tig_feature(spacer_b_end, len(sequence), system + ' tigRNA edge repeat 3 prime')
-                if system == 'TasA' and shared_edge_3_start is not None and shared_edge_3 == edge_3:
-                    inherited_seq = (shared_edge_3 + sequence).upper()
-                    add_feature(polycistron, shared_edge_3_start, start+len(edge_5), 'misc_feature',
-                                label=system + ' shared edge junction',
-                                note=system + ' shared multiplexing junction formed by upstream right edge repeat ' + edge_3.upper() + ' and downstream left edge repeat ' + edge_5.upper())
-                    add_feature(polycistron, shared_edge_3_start, start+len(sequence), 'misc_feature',
-                                label=system + ' inherited guide context',
-                                note=system + ' downstream guide context inherits upstream right edge repeat; sequence=' + inherited_seq)
                 if system == 'TasH' and edge_5 == edge_3 and len(edge_5) % 2 == 0:
                     cut_offset = int(len(edge_5) / 2)
                     processed_start = cut_offset
@@ -422,39 +415,10 @@ def annotate_tigRNA_features(polycistron, start, sequence, shared_edge_5_start=N
             spacer_b_start = loop_end
             spacer_b_end = spacer_b_start + spacer_len
             if sequence[loop_start:loop_end] == loop:
-                add_feature(polycistron, shared_edge_5_start, shared_edge_5_start+len(edge_5), 'misc_feature',
-                            label=system + ' shared tigRNA edge repeat',
-                            note=system + ' edge repeat shared by adjacent multiplexing units')
                 append_tig_feature(spacer_a_start, spacer_a_end, system + ' tigRNA spacer A')
                 append_tig_feature(loop_start, loop_end, system + ' tigRNA loop repeat')
                 append_tig_feature(spacer_b_start, spacer_b_end, system + ' tigRNA spacer B')
                 append_tig_feature(spacer_b_end, len(sequence), system + ' tigRNA edge repeat 3 prime')
-                if system == 'TasH' and edge_5 == edge_3 and len(edge_5) % 2 == 0:
-                    cut_offset = int(len(edge_5) / 2)
-                    processed_start = shared_edge_5_start + cut_offset
-                    processed_end = start + spacer_b_end + cut_offset
-                    processed_seq = (shared_edge_5[cut_offset:] + sequence[:spacer_b_end] + edge_3[:cut_offset]).upper()
-                    add_feature(polycistron, shared_edge_5_start, shared_edge_5_start+cut_offset, 'misc_feature',
-                                label=system + ' discarded shared 5 prime ER half',
-                                note=system + ' discarded half of shared upstream ER for this mature tigRNA')
-                    add_feature(polycistron, shared_edge_5_start+cut_offset, shared_edge_5_start+len(edge_5), 'misc_feature',
-                                label=system + ' retained shared 5 prime ER half',
-                                note=system + ' retained half of shared upstream ER for this mature tigRNA')
-                    add_feature(polycistron, start+spacer_b_end, start+spacer_b_end+cut_offset, 'misc_feature',
-                                label=system + ' retained 3 prime ER half',
-                                note=system + ' retained half of downstream ER for this mature tigRNA')
-                    add_feature(polycistron, start+spacer_b_end+cut_offset, start+len(sequence), 'misc_feature',
-                                label=system + ' discarded 3 prime ER half',
-                                note=system + ' discarded half of downstream ER for this mature tigRNA')
-                    add_feature(polycistron, processed_start, processed_end, 'misc_feature',
-                                label=system + ' processed mature tigRNA',
-                                note=system + ' mature tigRNA after shared-ER processing; sequence=' + processed_seq)
-                    add_feature(polycistron, shared_edge_5_start+cut_offset-1, shared_edge_5_start+cut_offset+1, 'misc_feature',
-                                label=system + ' 5 prime ER processing cut',
-                                note='Processing cut occurs between the two halves of the shared upstream edge repeat')
-                    add_feature(polycistron, start+spacer_b_end+cut_offset-1, start+spacer_b_end+cut_offset+1, 'misc_feature',
-                                label=system + ' 3 prime ER processing cut',
-                                note='Processing cut occurs between the two halves of the downstream edge repeat')
                 return system
 
     midpoint = int(np.floor(len(sequence) / 2))
@@ -720,18 +684,310 @@ def overhang_combination_score(parts_list, comb, poltype_opt='ptg', enzm='bsai',
     passes_floor = 1 if min_tm >= MIN_FILL_IN_OVERLAP_TM else 0
     return (passes_floor, min_tm, avg_tm, -spread, -sum([len(c) for c in comb]))
 
+
+def candidate_overhang_prefixes(part, poltype_opt, allowed_overhangs):
+    '''Returns possible overhang prefixes for one part.'''
+
+    seq = part.sequence.lower()
+    candidates = []
+    if poltype_opt == 'tigRNA':
+        for r_start,r_end in tigRNA_spacer_ranges(seq):
+            for pos in range(r_start, r_end-3):
+                overhang = seq[pos:pos+4]
+                if overhang in allowed_overhangs and pos + 4 >= TIGRNA_MIN_SPLIT_LEN:
+                    candidates.append(seq[:pos+4])
+    elif poltype_opt == 'ca':
+        spacer = seq[seq.find(DR)+len(DR):]
+        offset = seq.find(DR)+len(DR)
+        for pos in range(0, len(spacer)-3):
+            overhang = spacer[pos:pos+4]
+            if overhang in allowed_overhangs:
+                candidates.append(seq[:offset+pos+4])
+    return candidates
+
+
+def improve_overhang_combination_tms(parts_list, comb, poltype_opt='ptg', enzm='bsai', bb_linkers=['tgcc','gttt'], allowed_overhangs=None):
+    '''
+    Locally improves a valid overhang combination by swapping weak junctions.
+
+    This keeps runtime bounded for large Tas arrays while still allowing later
+    spacer A/B choices to rescue low-Tm oligo-extension fragments.
+    '''
+
+    if poltype_opt not in ['ca', 'tigRNA'] or comb is None:
+        return comb, []
+    if allowed_overhangs is None:
+        allowed_overhangs = set(all_curated_overhangs())
+        allowed_overhangs.update([reverse_complement(o) for o in list(allowed_overhangs)])
+
+    best_comb = tuple(comb)
+    best_score = overhang_combination_score(parts_list, best_comb, poltype_opt, enzm=enzm, bb_linkers=bb_linkers)
+    best_tms = overhang_combination_overlap_tms(parts_list, best_comb, poltype_opt, enzm=enzm, bb_linkers=bb_linkers)
+    weak_indices = set()
+    for idx,tm in enumerate(best_tms):
+        if tm < MIN_FILL_IN_OVERLAP_TM:
+            if idx > 0:
+                weak_indices.add(idx - 1)
+            if idx < len(best_comb):
+                weak_indices.add(idx)
+    if not weak_indices:
+        return best_comb, []
+    changed_indices = set()
+
+    improved = True
+    while improved and min(best_tms) < MIN_FILL_IN_OVERLAP_TM:
+        improved = False
+        current_overhangs = [c[-4:] for c in best_comb]
+        for idx in sorted(weak_indices):
+            for candidate in candidate_overhang_prefixes(parts_list[idx], poltype_opt, allowed_overhangs):
+                candidate_overhang = candidate[-4:]
+                if candidate_overhang in current_overhangs and candidate_overhang != current_overhangs[idx]:
+                    continue
+                trial = list(best_comb)
+                trial[idx] = candidate
+                trial = tuple(trial)
+                if len([c[-4:] for c in trial]) != len(set([c[-4:] for c in trial])):
+                    continue
+                score = overhang_combination_score(parts_list, trial, poltype_opt, enzm=enzm, bb_linkers=bb_linkers)
+                trial_tms = overhang_combination_overlap_tms(parts_list, trial, poltype_opt, enzm=enzm, bb_linkers=bb_linkers)
+                if score[0] >= best_score[0] and trial_tms != [] and min(trial_tms) > min(best_tms):
+                    if trial[idx] != best_comb[idx]:
+                        changed_indices.add(idx)
+                    best_comb = trial
+                    best_score = score
+                    best_tms = trial_tms
+                    improved = True
+                    break
+            if improved:
+                break
+
+    return best_comb, sorted(changed_indices)
+
+
+def tigRNA_seq_matches_for_overhangs(parts_list, golden_gate_overhangs, cov):
+    '''Returns possible tigRNA overhang prefixes for each internal junction.'''
+
+    oh_list = [x.sequence.lower() for x in parts_list]
+    tigRNA_ranges = [tigRNA_spacer_ranges(x.sequence) for x in parts_list]
+    seq_matches = []
+    for x in range(len(parts_list)-1):
+        matches = []
+        for overhang in golden_gate_overhangs:
+            for r_start,r_end in tigRNA_ranges[x]:
+                spacer_seq = oh_list[x][r_start:r_end]
+                if 2*cov >= len(spacer_seq):
+                    spacer_cov = spacer_seq
+                else:
+                    spacer_mid = int(np.ceil(np.true_divide(len(spacer_seq),2)))
+                    spacer_cov = spacer_seq[spacer_mid-cov:spacer_mid+cov]
+                if overhang in spacer_cov:
+                    overhang_start = oh_list[x].find(overhang, r_start, r_end)
+                    if overhang_start + 4 >= TIGRNA_MIN_SPLIT_LEN:
+                        matches.append(oh_list[x][:overhang_start+4])
+        seq_matches.append(sorted(set(matches), key=lambda item: (len(item), item)))
+    return seq_matches
+
+
+def ptg_subset_rescue_allowed(parts_list):
+    '''Returns whether PTG subset rescue can be used without prime editing.'''
+
+    return all(part.type in ['tRNA', 'gRNA'] for part in parts_list)
+
+
+def ptg_seq_matches_for_overhangs(parts_list, golden_gate_overhangs, cov):
+    '''Returns possible Cas9/gRNA PTG overhang prefixes for each junction.'''
+
+    oh_list = []
+    for part in parts_list:
+        if part.type == 'gRNA':
+            oh_list.append(part.sequence[:part.sequence.find(scaffld)])
+        else:
+            oh_list.append('plc')
+
+    cov_list = []
+    for oh in oh_list:
+        if 2*cov >= len(oh):
+            cov_list.append(oh)
+        else:
+            midpoint = int(np.ceil(np.true_divide(len(oh),2)))
+            cov_list.append(oh[midpoint-cov:midpoint+cov])
+
+    seq_matches = []
+    for x in range(len(parts_list)-1):
+        matches = []
+        if parts_list[x+1].type == 'gRNA':
+            for overhang in golden_gate_overhangs:
+                if overhang in cov_list[x+1]:
+                    matches.append(oh_list[x+1][:oh_list[x+1].find(overhang)+4])
+        seq_matches.append(sorted(set(matches), key=lambda item: (len(item), item)))
+    return seq_matches
+
+
+def ca_seq_matches_for_overhangs(parts_list, golden_gate_overhangs, cov):
+    '''Returns possible Cas12a/crRNA overhang prefixes for each junction.'''
+
+    oh_list = [part.sequence[part.sequence.find(DR)+len(DR):] for part in parts_list]
+    cov_list = []
+    for oh in oh_list:
+        if 2*cov >= len(oh):
+            cov_list.append(oh)
+        else:
+            midpoint = int(np.ceil(np.true_divide(len(oh),2)))
+            cov_list.append(oh[midpoint-cov:midpoint+cov])
+
+    seq_matches = []
+    for x in range(len(parts_list)-1):
+        matches = []
+        for overhang in golden_gate_overhangs:
+            if overhang in cov_list[x]:
+                matches.append(oh_list[x][:oh_list[x].find(overhang)+4])
+        seq_matches.append(sorted(set(matches), key=lambda item: (len(item), item)))
+    return seq_matches
+
+
+def junction_candidate_prefixes(parts_list, idx, poltype_opt, allowed_overhangs):
+    '''Returns rescue overhang prefixes for one internal junction.'''
+
+    if poltype_opt == 'tigRNA':
+        return candidate_overhang_prefixes(parts_list[idx], 'tigRNA', allowed_overhangs)
+    if poltype_opt == 'ca':
+        return candidate_overhang_prefixes(parts_list[idx], 'ca', allowed_overhangs)
+    if poltype_opt == 'ptg':
+        if not ptg_subset_rescue_allowed(parts_list) or parts_list[idx+1].type != 'gRNA':
+            return []
+        spacer = parts_list[idx+1].sequence[:parts_list[idx+1].sequence.find(scaffld)].lower()
+        candidates = []
+        for pos in range(0, len(spacer)-3):
+            overhang = spacer[pos:pos+4]
+            if overhang in allowed_overhangs:
+                candidates.append(spacer[:pos+4])
+        return candidates
+    return []
+
+
+def rescue_dropped_overhangs(parts_list, partial_comb, dropped_indices, used_overhangs, allowed_overhangs, poltype_opt, enzm='bsai', bb_linkers=['tgcc','gttt']):
+    '''Fills dropped junctions with curated rescue overhangs.'''
+
+    rescue_options = []
+    for idx in dropped_indices:
+        options = []
+        for candidate in junction_candidate_prefixes(parts_list, idx, poltype_opt, allowed_overhangs):
+            candidate_overhang = candidate[-4:]
+            if candidate_overhang not in used_overhangs:
+                options.append(candidate)
+        options = sorted(set(options), key=lambda item: (len(item), item))
+        if options == []:
+            return None, None
+        rescue_options.append(options)
+
+    best_comb = None
+    best_score = None
+    for rescue_tuple in itertools.product(*rescue_options):
+        trial = list(partial_comb)
+        for idx,candidate in zip(dropped_indices, rescue_tuple):
+            trial[idx] = candidate
+        trial = tuple(trial)
+        overhangs = [c[-4:] for c in trial]
+        if len(overhangs) != len(set(overhangs)):
+            continue
+        if poltype_opt in ['ca', 'tigRNA']:
+            score = overhang_combination_score(parts_list, trial, poltype_opt, enzm=enzm, bb_linkers=bb_linkers)
+            if score[0] < 0:
+                continue
+            if best_score is None or score > best_score:
+                best_comb = trial
+                best_score = score
+            if score[0] == 1:
+                return trial, score
+        else:
+            return trial, (1, 0, 0, 0, 0)
+    return best_comb, best_score
+
+
+def subset_rescue_optimization(parts_list, free_overhangsets, rescue_overhangs, poltype_opt, enzm='bsai', bb_linkers=['tgcc','gttt']):
+    '''
+    Finds a mostly optimal overhang set by dropping difficult junctions.
+
+    The kept junctions must come from one validated optimal overhang collection.
+    Dropped junctions are filled from the curated rescue pool and can be flagged
+    individually in the output.
+    '''
+
+    n_junctions = len(parts_list) - 1
+    if n_junctions <= 1:
+        return None, []
+    if poltype_opt == 'ptg' and not ptg_subset_rescue_allowed(parts_list):
+        return None, []
+    max_cov = max([int(np.ceil(np.true_divide(len(prt.sequence),2))) for prt in parts_list])
+    fallback_comb = None
+    fallback_score = None
+    fallback_dropped = []
+    max_partial_trials = 2000
+
+    for drop_count in range(1, n_junctions + 1):
+        for dropped_indices in itertools.combinations(range(n_junctions), drop_count):
+            dropped_indices = tuple(dropped_indices)
+            kept_indices = [idx for idx in range(n_junctions) if idx not in dropped_indices]
+            for cov in range(2, max_cov):
+                for golden_gate_overhangs in free_overhangsets:
+                    if poltype_opt == 'tigRNA':
+                        seq_matches = tigRNA_seq_matches_for_overhangs(parts_list, golden_gate_overhangs, cov)
+                    elif poltype_opt == 'ca':
+                        seq_matches = ca_seq_matches_for_overhangs(parts_list, golden_gate_overhangs, cov)
+                    elif poltype_opt == 'ptg':
+                        seq_matches = ptg_seq_matches_for_overhangs(parts_list, golden_gate_overhangs, cov)
+                    else:
+                        return None, []
+                    if any(seq_matches[idx] == [] for idx in kept_indices):
+                        continue
+                    partial_trials = 0
+                    for kept_tuple in itertools.product(*[seq_matches[idx] for idx in kept_indices]):
+                        partial_trials += 1
+                        if partial_trials > max_partial_trials:
+                            break
+                        kept_overhangs = [candidate[-4:] for candidate in kept_tuple]
+                        if len(kept_overhangs) != len(set(kept_overhangs)):
+                            continue
+                        partial_comb = [None for i in range(n_junctions)]
+                        for idx,candidate in zip(kept_indices, kept_tuple):
+                            partial_comb[idx] = candidate
+                        full_comb,score = rescue_dropped_overhangs(parts_list,
+                                                                   partial_comb,
+                                                                   dropped_indices,
+                                                                   set(kept_overhangs),
+                                                                   rescue_overhangs,
+                                                                   poltype_opt,
+                                                                   enzm=enzm,
+                                                                   bb_linkers=bb_linkers)
+                        if full_comb is None:
+                            continue
+                        if score[0] == 1:
+                            return full_comb, list(dropped_indices)
+                        if fallback_score is None or score > fallback_score:
+                            fallback_comb = full_comb
+                            fallback_score = score
+                            fallback_dropped = list(dropped_indices)
+    if fallback_comb is not None:
+        return fallback_comb, fallback_dropped
+    return None, []
+
+
+def tigRNA_subset_rescue_optimization(parts_list, free_overhangsets, rescue_overhangs, enzm='bsai', bb_linkers=['tgcc','gttt']):
+    '''Compatibility wrapper for tigRNA subset rescue.'''
+
+    return subset_rescue_optimization(parts_list, free_overhangsets, rescue_overhangs, 'tigRNA', enzm=enzm, bb_linkers=bb_linkers)
+
 def primer_construct_match(primer, polycistron_sequence, enzm_seq, strand=1):
     '''
     Returns the primer segment that matches the final assembled polycistron.
 
-    The Type IIS recognition site and the 4 bp cloning overhang are excluded
-    before matching. The returned coordinates therefore annotate only the
-    template/extension sequence that is present in the GenBank construct.
+    The Type IIS recognition site is excluded before matching. The 4 bp Golden
+    Gate overhang is retained because it matches the final GenBank construct.
     '''
 
     primer = primer.lower()
     polycistron_sequence = polycistron_sequence.lower()
-    trimmed = primer[len(enzm_seq) + 4:]
+    trimmed = primer[len(enzm_seq):]
     if strand == -1:
         trimmed = reverse_complement(trimmed)
 
@@ -1057,6 +1313,7 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
     polycistron.overhang_selection_mode = 'optimal'
     polycistron.overhang_warning = ''
     polycistron.selected_overhangs = []
+    polycistron.overhang_statuses = []
 
     
     ## Go through parts and write all known annotations into list   
@@ -1068,8 +1325,6 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
         part.template_sequence = part.sequence
         part_label = part.name + ' ' + part.type
         unit_note = 'PolyGEN array unit ' + part.name + '; RNA type=' + part.type
-        if getattr(part, 'shared_edge_note', None):
-            unit_note += '; ' + part.shared_edge_note
         polycistron.sequence += part.sequence
         add_feature(polycistron, mmry, mmry+len(part.sequence), part.type,
                     label=part_label,
@@ -1131,7 +1386,10 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
     ## Iterate through overhang sets with increasing size until fitting one is found
     gg_opt = None
     breakit = False
+    collection_rescue_indices = set()
+    tm_rescue_indices = []
     existing_overhangs = ad_linkers+bb_linkers
+    compatible_free_overhangsets = []
     for p in range(10,51):
         free_overhangsets = []
         for q in range(5):
@@ -1151,6 +1409,7 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
             else:
                 continue
         if free_overhangsets:
+            compatible_free_overhangsets += free_overhangsets
             gg_opt = golden_gate_optimization(parts_list, free_overhangsets, poltype, enzm=enzm, bb_linkers=bb_linkers)
         if gg_opt is not None:
             breakit = True
@@ -1197,6 +1456,30 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
             if breakit:
                 break
         
+    subset_rescue_allowed = (poltype in ['tigRNA', 'ca'] or
+                             (poltype == 'ptg' and ptg_subset_rescue_allowed(parts_list)))
+    if gg_opt is None and subset_rescue_allowed and compatible_free_overhangsets:
+        disallowed = set(ad_linkers + bb_linkers + [reverse_complement(i) for i in ad_linkers + bb_linkers])
+        curated = set(all_curated_overhangs())
+        curated.update([reverse_complement(o) for o in list(curated)])
+        rescue_overhangs = sorted([o for o in curated if o not in disallowed])
+        subset_opt,subset_rescue_indices = subset_rescue_optimization(parts_list,
+                                                                      compatible_free_overhangsets,
+                                                                      rescue_overhangs,
+                                                                      poltype,
+                                                                      enzm=enzm,
+                                                                      bb_linkers=bb_linkers)
+        if subset_opt is not None:
+            gg_opt = subset_opt
+            collection_rescue_indices = set(subset_rescue_indices)
+            polycistron.overhang_selection_mode = 'rescue'
+            polycistron.overhang_warning = ('No validated optimal overhang set covered every internal junction. '
+                                            'PolyGEN selected a validated optimal set for the largest compatible subset '
+                                            'and used curated rescue overhangs for junction(s) ' +
+                                            ','.join([str(i + 1) for i in subset_rescue_indices]) +
+                                            '. Assembly should be experimentally validated.')
+            polycistron.warning = polycistron.overhang_warning
+
     if gg_opt is None:
         disallowed = set(ad_linkers + bb_linkers + [reverse_complement(i) for i in ad_linkers + bb_linkers])
         curated = set(all_curated_overhangs())
@@ -1206,10 +1489,45 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
         if rescue_opt is None:
             raise InvalidUsage("No combination of optimal or rescue linkers possible for the provided existing linkers", status_code=400, payload={'pge': 'sequence.html', 'box': 'link'})
         gg_opt = rescue_opt
+        collection_rescue_indices = set(range(len(gg_opt)))
         polycistron.overhang_selection_mode = 'rescue'
         polycistron.overhang_warning = 'Rescue overhang mode was used. The selected overhangs are individually present in curated overhang tables, but this exact overhang collection was not found as a validated optimal set. Assembly may fail and should be experimentally validated.'
         polycistron.warning = polycistron.overhang_warning
+    if poltype in ['ca', 'tigRNA']:
+        initial_overlap_tms = overhang_combination_overlap_tms(parts_list, gg_opt, poltype, enzm=enzm, bb_linkers=bb_linkers)
+        if initial_overlap_tms != [] and min(initial_overlap_tms) < MIN_FILL_IN_OVERLAP_TM:
+            disallowed = set(ad_linkers + bb_linkers + [reverse_complement(i) for i in ad_linkers + bb_linkers])
+            curated = set(all_curated_overhangs())
+            curated.update([reverse_complement(o) for o in list(curated)])
+            allowed_tm_rescue = set([o for o in curated if o not in disallowed])
+            improved_gg_opt, tm_rescue_indices = improve_overhang_combination_tms(parts_list, gg_opt, poltype, enzm=enzm, bb_linkers=bb_linkers, allowed_overhangs=allowed_tm_rescue)
+            if tm_rescue_indices:
+                gg_opt = improved_gg_opt
+                if polycistron.overhang_selection_mode == 'optimal':
+                    polycistron.overhang_selection_mode = 'rescue'
+                tm_rescue_note = 'Tm-aware overhang rescue adjusted one or more split positions because the initial fill-in overlap Tm was below target.'
+                if polycistron.overhang_warning:
+                    polycistron.overhang_warning += ' ' + tm_rescue_note
+                else:
+                    polycistron.overhang_warning = tm_rescue_note
+                polycistron.warning = (polycistron.warning + ' ' + tm_rescue_note) if polycistron.warning else tm_rescue_note
+
     polycistron.selected_overhangs = [g[-4:] for g in gg_opt]
+    polycistron.overhang_statuses = []
+    for idx,overhang in enumerate(polycistron.selected_overhangs):
+        if idx in tm_rescue_indices:
+            status = 'tm_rescue'
+            note = 'This overhang split was adjusted by Tm-aware rescue to improve the oligo-pair overlap Tm.'
+        elif idx in collection_rescue_indices:
+            status = 'collection_rescue'
+            note = 'This overhang is present in curated tables and was used as rescue because the full tigRNA collection did not fit one validated optimal set.'
+        else:
+            status = 'optimal'
+            note = 'This overhang was selected from a validated optimal overhang set.'
+        polycistron.overhang_statuses.append({'index': idx + 1,
+                                              'overhang': overhang,
+                                              'status': status,
+                                              'note': note})
     polycistron.fill_in_overlap_tms = overhang_combination_overlap_tms(parts_list, gg_opt, poltype, enzm=enzm, bb_linkers=bb_linkers) if poltype == 'tigRNA' else []
     if polycistron.fill_in_overlap_tms != []:
         min_overlap_tm = min(polycistron.fill_in_overlap_tms)
@@ -1736,7 +2054,7 @@ def PTGbldr(name, inserts, poltype='ptg'):
                     part.shared_edge_5_system = system
                     part.shared_edge_note = 'Leading ' + edge_5 + ' edge repeat is shared with the previous TasH unit and is not duplicated in the assembled array.'
                     break
-                elif previous_edge_3 == edge_3 and sequence.upper().startswith(edge_5.upper()) and edge_5.upper() != edge_3.upper():
+                elif system == 'TasA' and previous_edge_3 == edge_3 and sequence.upper().startswith(edge_5.upper()) and edge_5.upper() != edge_3.upper():
                     part.shared_edge_3 = edge_3
                     part.shared_edge_5 = edge_5
                     part.shared_edge_5_system = system
@@ -1824,8 +2142,8 @@ def annotatePrimers(polycistron, oligo_prefix='o', oligo_index='0', staticBorder
             collapsed_index += 1
     
     
-    ## Annotate only the primer sequence that matches the final GenBank construct.
-    ## Type IIS recognition sites and 4 bp cloning overhangs are left unannotated.
+    ## Annotate only the oligo sequence that matches the final GenBank construct.
+    ## Type IIS recognition sites are left unannotated; 4 bp overhangs are retained.
     for c,part in enumerate(polycistron.parts):
         for primer,oligo,strand,enzm_seq in [(part.primer_forward, polycistron.oligos[2*c][0], 1, enzms[enzm][0]),
                                              (part.primer_reverse, polycistron.oligos[2*c+1][0], -1, enzms[enzm][1])]:
@@ -1835,7 +2153,7 @@ def annotatePrimers(polycistron, oligo_prefix='o', oligo_index='0', staticBorder
                 direction = 'forward' if strand == 1 else 'reverse'
                 add_feature(polycistron, strt, end, 'primer_bind',
                             label=oligo,
-                            note=oligo + ' ' + direction + ' primer binding region',
+                            note=oligo + ' ' + direction + ' oligo region matching the final construct; Type IIS recognition site is excluded and the 4 bp Golden Gate overhang is included',
                             strand=strand)
     
     return polycistron
