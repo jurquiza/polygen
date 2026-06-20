@@ -9,12 +9,14 @@ from .engine import (
     TAS_SYSTEMS,
     annotatePrimers,
     annotate_tigRNA_features,
+    balanced_fragment_primers,
     complement,
     dna_to_rna,
     flattn,
     gc_content,
     golden_gate_optimization,
     make_tas_candidate,
+    oligo_fragment_mismatches,
     pegbldr,
     polyToJson,
     primer_pair_overlap,
@@ -26,7 +28,7 @@ from .engine import (
     tigRNA_spacer_ranges,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 __all__ = [
     "Diff",
@@ -37,12 +39,14 @@ __all__ = [
     "TAS_SYSTEMS",
     "annotatePrimers",
     "annotate_tigRNA_features",
+    "balanced_fragment_primers",
     "complement",
     "dna_to_rna",
     "flattn",
     "gc_content",
     "golden_gate_optimization",
     "make_tas_candidate",
+    "oligo_fragment_mismatches",
     "pegbldr",
     "polyToJson",
     "primer_pair_overlap",
@@ -53,4 +57,3 @@ __all__ = [
     "tas_guide_design",
     "tigRNA_spacer_ranges",
 ]
-

@@ -155,11 +155,11 @@ text-align: justify
 	      </p>
 
 	      <p>
-	      For adjacent TasA units, PolyGEN treats the junction AGTG-AACCG as a shared edge boundary. The assembled sequence keeps both halves of the junction, and oligo design verifies that downstream fragment forward oligos carry the complete AGTGAACCG junction across the fragment boundary.
+	      For adjacent asymmetric Tas units, PolyGEN treats the upstream right edge plus the downstream left edge as required edge-junction context. For default TasA this junction is AGTG-AACCG; for default TasH this junction is AAGCGAGCCA-GAGCGAGTTA. Oligo design verifies that this full edge junction is retained across the fragment boundary.
 	      </p>
 
 	      <p>
-	      Downstream TasA units are annotated with an inherited guide context spanning the upstream AGTG right edge and the current AACCG-left-edge unit. This makes the GenBank map show that the TasA boundary is inherited from the previous repeat rather than belonging only to the isolated downstream unit.
+	      GenBank exports keep the map clean by annotating the assembled tigRNA unit features and the matching oligo regions, while avoiding extra inherited-context labels for edge junctions.
 	      </p>
 
 	      <p>
@@ -167,7 +167,7 @@ text-align: justify
 	      </p>
 
 	      <p>
-	      During tigRNA Golden Gate oligo design, PolyGEN chooses internal assembly overhangs from spacer A or spacer B. The fixed edge and loop repeat regions are avoided as overhang sources. This keeps the split inside programmable sequence, increases flexibility for multiplex arrays and rejects spacer-A splits that would make the left oligo-extension segment too short. Each tigRNA fragment is produced by a forward/reverse oligo pair with an overlapping region that can be filled in by polymerase. The reported melting temperature for tigRNA oligos is calculated from that shared overlap only, not from the full oligo sequence.
+	      During tigRNA Golden Gate oligo design, PolyGEN chooses internal assembly overhangs from spacer A or spacer B. The fixed edge and loop repeat regions are avoided as overhang sources. This keeps the split inside programmable sequence, increases flexibility for multiplex arrays and rejects spacer-A splits that would make the left oligo-extension segment too short. Each tigRNA fragment is produced by a forward/reverse oligo pair with an overlapping region that can be filled in by polymerase. PolyGEN dynamically balances tigRNA oligo arms up to 60 bp when required, so short TasA/TasH fragments keep enough shared overlap for assembly. The reported melting temperature for tigRNA oligos is calculated from that shared overlap only, not from the full oligo sequence.
 	      </p>
 
 	      <p>
@@ -175,7 +175,7 @@ text-align: justify
 	      </p>
 
 	      <p>
-	      GenBank exports include readable labels and notes for each PolyGEN array unit, programmable spacer, scaffold or processing element, and primer-binding site. These annotations make it easier to recover what each sgRNA, crRNA, pegRNA, smRNA or tigRNA unit was designed to target after the construct has been assembled.
+	      GenBank exports include readable labels and notes for each PolyGEN array unit, programmable spacer, scaffold or processing element, and primer-binding site. Primer-binding features mark the oligo sequence that matches the final assembled construct: the Type IIS recognition site is excluded and the 4 bp Golden Gate overhang is included. These annotations make it easier to recover what each sgRNA, crRNA, pegRNA, smRNA or tigRNA unit was designed to target after the construct has been assembled.
 	      </p>
 
 	      <p>
@@ -183,11 +183,11 @@ text-align: justify
 	      </p>
 
 	      <p>
-	      In TasH multiplex arrays with identical left and right edge repeats, adjacent units share the repeated edge at their junction. For the current asymmetric TasH default, each tigRNA unit is assembled as a complete edge-spacer-loop-spacer-edge unit.
+	      In TasH multiplex arrays with identical left and right edge repeats, adjacent units can share the repeated edge at their junction. For the current asymmetric TasH default, each tigRNA unit is assembled as a complete edge-spacer-loop-spacer-edge unit, and the AAGCGAGCCA-GAGCGAGTTA inter-unit junction is retained in the oligo overlap.
 	      </p>
 
 	      <p>
-	      TasH oligo design follows the scaffold model used for the selected units, so asymmetric TasH defaults are split across complete unit sequences while identical-edge custom scaffolds can still use the shared-edge path.
+	      TasH oligo design follows the scaffold model used for the selected units, so asymmetric TasH defaults are split across complete unit sequences with the required right-edge/left-edge junction retained, while identical-edge custom scaffolds can still use the shared-edge path.
 	      </p>
 
 

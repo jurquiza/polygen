@@ -6,14 +6,14 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>engine module &mdash; PolyGEN 2021 documentation</title>
+  <title>engine module &mdash; PolyGEN 0.2.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=37e646e6"></script>
+      <script src="_static/documentation_options.js?v=37f418d5"></script>
       <script src="_static/doctools.js?v=9a2dae69"></script>
       <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -51,27 +51,46 @@
 <li class="toctree-l4"><a class="reference internal" href="#engine.PTGbldr"><code class="docutils literal notranslate"><span class="pre">PTGbldr()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.Part"><code class="docutils literal notranslate"><span class="pre">Part</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.Polycistron"><code class="docutils literal notranslate"><span class="pre">Polycistron</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.add_feature"><code class="docutils literal notranslate"><span class="pre">add_feature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.all_curated_overhangs"><code class="docutils literal notranslate"><span class="pre">all_curated_overhangs()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.annotatePrimers"><code class="docutils literal notranslate"><span class="pre">annotatePrimers()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.annotate_tigRNA_features"><code class="docutils literal notranslate"><span class="pre">annotate_tigRNA_features()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.balanced_fragment_primers"><code class="docutils literal notranslate"><span class="pre">balanced_fragment_primers()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.ca_seq_matches_for_overhangs"><code class="docutils literal notranslate"><span class="pre">ca_seq_matches_for_overhangs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.candidate_overhang_prefixes"><code class="docutils literal notranslate"><span class="pre">candidate_overhang_prefixes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.choose_pbs"><code class="docutils literal notranslate"><span class="pre">choose_pbs()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.complement"><code class="docutils literal notranslate"><span class="pre">complement()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.dna_to_rna"><code class="docutils literal notranslate"><span class="pre">dna_to_rna()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.flattn"><code class="docutils literal notranslate"><span class="pre">flattn()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.gc_content"><code class="docutils literal notranslate"><span class="pre">gc_content()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.golden_gate_optimization"><code class="docutils literal notranslate"><span class="pre">golden_gate_optimization()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.improve_overhang_combination_tms"><code class="docutils literal notranslate"><span class="pre">improve_overhang_combination_tms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.junction_candidate_prefixes"><code class="docutils literal notranslate"><span class="pre">junction_candidate_prefixes()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.longest_common_substring"><code class="docutils literal notranslate"><span class="pre">longest_common_substring()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.longest_homopolymer"><code class="docutils literal notranslate"><span class="pre">longest_homopolymer()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.make_tas_candidate"><code class="docutils literal notranslate"><span class="pre">make_tas_candidate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.overhang_combination_overlap_tms"><code class="docutils literal notranslate"><span class="pre">overhang_combination_overlap_tms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.overhang_combination_score"><code class="docutils literal notranslate"><span class="pre">overhang_combination_score()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.pbs_tm"><code class="docutils literal notranslate"><span class="pre">pbs_tm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.pegRNA_pbs_length"><code class="docutils literal notranslate"><span class="pre">pegRNA_pbs_length()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.pegbldr"><code class="docutils literal notranslate"><span class="pre">pegbldr()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.polyToJson"><code class="docutils literal notranslate"><span class="pre">polyToJson()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.primer_annealing_tm"><code class="docutils literal notranslate"><span class="pre">primer_annealing_tm()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.primer_construct_match"><code class="docutils literal notranslate"><span class="pre">primer_construct_match()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.primer_pair_overlap"><code class="docutils literal notranslate"><span class="pre">primer_pair_overlap()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.primer_pair_overlap_tm"><code class="docutils literal notranslate"><span class="pre">primer_pair_overlap_tm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.ptg_seq_matches_for_overhangs"><code class="docutils literal notranslate"><span class="pre">ptg_seq_matches_for_overhangs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.ptg_subset_rescue_allowed"><code class="docutils literal notranslate"><span class="pre">ptg_subset_rescue_allowed()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.rescue_dropped_overhangs"><code class="docutils literal notranslate"><span class="pre">rescue_dropped_overhangs()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.reverse"><code class="docutils literal notranslate"><span class="pre">reverse()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.reverse_complement"><code class="docutils literal notranslate"><span class="pre">reverse_complement()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.scarless_gg"><code class="docutils literal notranslate"><span class="pre">scarless_gg()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.sequence_overlap_tm"><code class="docutils literal notranslate"><span class="pre">sequence_overlap_tm()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.subset_rescue_optimization"><code class="docutils literal notranslate"><span class="pre">subset_rescue_optimization()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.tas_guide_design"><code class="docutils literal notranslate"><span class="pre">tas_guide_design()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.tigRNA_seq_matches_for_overhangs"><code class="docutils literal notranslate"><span class="pre">tigRNA_seq_matches_for_overhangs()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#engine.tigRNA_spacer_ranges"><code class="docutils literal notranslate"><span class="pre">tigRNA_spacer_ranges()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#engine.tigRNA_subset_rescue_optimization"><code class="docutils literal notranslate"><span class="pre">tigRNA_subset_rescue_optimization()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -110,13 +129,22 @@
 <section id="tas-and-tigrna-additions">
 <h2>Tas and tigRNA additions<a class="headerlink" href="#tas-and-tigrna-additions" title="Link to this heading"></a></h2>
 <p>PolyGEN supports TIGR-Tas guide RNA design through the TasA and TasH
-architectures. TasA uses two programmable 9 nt spacers and TasH uses two
-programmable 8 nt spacers. The mature tigRNA is built as edge repeat 5 prime,
-spacer A, loop repeat, spacer B and edge repeat 3 prime.</p>
+architectures. TasA uses two programmable 9 nt spacers and TasH multiplexing
+uses two programmable 8 nt spacers. The mature tigRNA is built as edge repeat 5 prime,
+spacer A, loop repeat, spacer B and edge repeat 3 prime.
+The default TasA scaffold is AACCG, spacer A, AGTAACCCC, spacer B, AGTG.
+The default TasH scaffold is GAGCGAGTTA, spacer A, AAAACAATCA,
+spacer B, AAGCGAGCCA.</p>
 <p>The Tas page uses <a class="reference internal" href="#engine.tas_guide_design" title="engine.tas_guide_design"><code class="xref py py-func docutils literal notranslate"><span class="pre">engine.tas_guide_design()</span></code></a> with exact target windows for
-multiplexing. Exact windows are 18 bp for TasA and 16 bp for TasH.
+multiplexing. Exact windows are 18 bp for TasA and 16 bp for TasH. For TasH
+multiplexing, the first 8 bp are embedded as spacer A and the reverse
+complement of the second 8 bp is embedded as spacer B.
 Exact-window entries may be separated by whitespace, commas, semicolons or
 vertical bars.</p>
+<p>For adjacent asymmetric Tas units, <a class="reference internal" href="#engine.PTGbldr" title="engine.PTGbldr"><code class="xref py py-func docutils literal notranslate"><span class="pre">engine.PTGbldr()</span></code></a> tracks the upstream
+right edge plus the downstream left edge as required edge-junction context. For
+the current defaults this junction is AGTG-AACCG in TasA arrays and
+AAGCGAGCCA-GAGCGAGTTA in TasH arrays.</p>
 <p>Designed tigRNAs are passed into the assembly pipeline with the <code class="docutils literal notranslate"><span class="pre">tigRNA</span></code>
 polycistron type and input records of the form:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tigRNA</span><span class="p">;</span><span class="n">sequence0</span><span class="o">|</span><span class="n">tigRNA</span><span class="p">;</span><span class="n">sequence1</span><span class="o">|</span><span class="n">tigRNA</span><span class="p">;</span><span class="n">sequence2</span>
@@ -124,14 +152,18 @@ polycistron type and input records of the form:</p>
 </div>
 <p>In <code class="docutils literal notranslate"><span class="pre">tigRNA</span></code> mode, <a class="reference internal" href="#engine.PTGbldr" title="engine.PTGbldr"><code class="xref py py-func docutils literal notranslate"><span class="pre">engine.PTGbldr()</span></code></a> treats every input sequence as a
 mature tigRNA and does not add tRNAs or a Cpf1 direct repeat. During Golden Gate
-optimization, internal overhangs are chosen from spacer B only for recognized
-TasA/TasH scaffolds. Border oligos are target-specific and are always reported.
-The melting temperature reported for tigRNA oligo pairs is calculated from the
-shared forward/reverse overlap used for polymerase fill-in, not from the full
-oligo sequence.</p>
+optimization, internal overhangs are chosen from spacer A or spacer B for
+recognized TasA/TasH scaffolds while avoiding fixed edge and loop sequences.
+Border oligos are target-specific and are always reported.
+Oligo arms are dynamically balanced up to 60 bp when needed so short TasA/TasH
+fragments keep enough shared overlap for assembly. The melting temperature
+reported for tigRNA oligo pairs is calculated from the shared forward/reverse
+overlap used for polymerase fill-in, not from the full oligo sequence.</p>
 <p>The GenBank output generated downstream of <a class="reference internal" href="#engine.scarless_gg" title="engine.scarless_gg"><code class="xref py py-func docutils literal notranslate"><span class="pre">engine.scarless_gg()</span></code></a> annotates
 recognized tigRNAs with edge repeat 5 prime, spacer A, loop repeat, spacer B
-and edge repeat 3 prime features.</p>
+and edge repeat 3 prime features. Primer-binding annotations include the 4 bp
+Golden Gate overhang when it matches the final construct, but exclude the Type
+IIS recognition site.</p>
 <dl class="py function" id="module-engine">
 <dt class="sig sig-object py" id="engine.Diff">
 <span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">Diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">li1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">li2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.Diff" title="Link to this definition"></a></dt>
@@ -285,13 +317,25 @@ mature TIGR-Tas tigRNA and does not add tRNAs or a Cpf1 direct repeat.</p></li>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="engine.add_feature">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">add_feature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">polycistron</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">note</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strand</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.add_feature" title="Link to this definition"></a></dt>
+<dd><p>Adds a GenBank feature with readable label and note qualifiers.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.all_curated_overhangs">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">all_curated_overhangs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#engine.all_curated_overhangs" title="Link to this definition"></a></dt>
+<dd><p>Returns all unique 4 bp overhangs present in the curated overhang tables.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="engine.annotatePrimers">
 <span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">annotatePrimers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">polycistron</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oligo_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'o'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oligo_index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">staticBorderPrimers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noBorderPrimers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poltype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ptg'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enzm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bsai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bb_linkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['tgcc',</span> <span class="pre">'gttt']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_linkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.annotatePrimers" title="Link to this definition"></a></dt>
 <dd><p>Annotates the provided primers in the polycistron</p>
-<p>In <code class="docutils literal notranslate"><span class="pre">tigRNA</span></code> mode, <code class="docutils literal notranslate"><span class="pre">staticBorderPrimers</span></code> and <code class="docutils literal notranslate"><span class="pre">noBorderPrimers</span></code> are
-disabled internally. tigRNA border oligos are target-specific because they
-depend on the first and last mature tigRNA in the array, so they are always
-assigned normal oligo names and included in the final oligo list.</p>
+<p>Reusable/default border oligos are applied only in <code class="docutils literal notranslate"><span class="pre">ptg</span></code> mode. <code class="docutils literal notranslate"><span class="pre">ca</span></code> and
+<code class="docutils literal notranslate"><span class="pre">tigRNA</span></code> assemblies do not use the tRNA-processed PTG architecture, so
+their border oligos are target-specific and always included in the final
+oligo list.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -300,7 +344,7 @@ assigned normal oligo names and included in the final oligo list.</p>
 <li><p><strong>oligo_index</strong> (<em>str</em>) – Index from where to start the oligo numbering</p></li>
 <li><p><strong>staticBorderPrimers</strong> (<em>Boolean</em>) – Whether the border primers should be optimised or the static default ones for each architecture and restriction enzyme should be assigned</p></li>
 <li><p><strong>noBorderPrimers</strong> (<em>Boolean</em>) – Whether the border primers should be omitted from the numbering and instead assigned a default name</p></li>
-<li><p><strong>poltype_opt</strong> (<em>str</em><em>, </em><em>optional</em>) – The type of polycistronic architecture to use. Must be one of ‘ptg’ or ‘ca’, defaults to ‘ptg’</p></li>
+<li><p><strong>poltype_opt</strong> (<em>str</em><em>, </em><em>optional</em>) – The type of polycistronic architecture to use. Must be one of ‘ptg’, ‘ca’ or ‘tigRNA’, defaults to ‘ptg’</p></li>
 <li><p><strong>enzm</strong> (<em>str</em><em>, </em><em>optional</em>) – Type II restriction enzyme to use for the Golden Gate assembly. Defaults to ‘bsai’</p></li>
 <li><p><strong>bb_linkers</strong> (<em>list</em><em>, </em><em>optional</em>) – Linkers of the destination plasmid flanking the final PTG, defaults to [‘tgcc’,’gttt’]</p></li>
 <li><p><strong>ad_linkers</strong> (<em>list</em><em>, </em><em>optional</em>) – Additional linkers in the destination plasmid, defaults to []</p></li>
@@ -311,7 +355,7 @@ assigned normal oligo names and included in the final oligo list.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="engine.annotate_tigRNA_features">
-<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">annotate_tigRNA_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">polycistron</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequence</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.annotate_tigRNA_features" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">annotate_tigRNA_features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">polycistron</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared_edge_5_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared_edge_5</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared_edge_3_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared_edge_3</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.annotate_tigRNA_features" title="Link to this definition"></a></dt>
 <dd><p>Annotates scaffold and spacer regions within one mature tigRNA.</p>
 <p>Recognized TasA/TasH tigRNAs receive separate GenBank <code class="docutils literal notranslate"><span class="pre">misc_feature</span></code>
 entries for edge repeat 5 prime, spacer A, loop repeat, spacer B and edge
@@ -332,6 +376,36 @@ spacer/scaffold annotations.</p>
 <dd class="field-odd"><p>str or None</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.balanced_fragment_primers">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">balanced_fragment_primers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fragment_sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enzm_pair</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_tm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">45</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_core_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_core_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.balanced_fragment_primers" title="Link to this definition"></a></dt>
+<dd><p>Designs fill-in oligos for one short Golden Gate fragment.</p>
+<p>The fragment sequence is expected to include the forward Type IIS template
+at the 5 prime end and the reverse Type IIS template at the 3 prime end.
+Primer arms are extended beyond the historical 30 bp default only when the
+fragment is long enough that the two oligos would otherwise overlap weakly.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.ca_seq_matches_for_overhangs">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">ca_seq_matches_for_overhangs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">golden_gate_overhangs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.ca_seq_matches_for_overhangs" title="Link to this definition"></a></dt>
+<dd><p>Returns possible Cas12a/crRNA overhang prefixes for each junction.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.candidate_overhang_prefixes">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">candidate_overhang_prefixes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">part</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poltype_opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_overhangs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.candidate_overhang_prefixes" title="Link to this definition"></a></dt>
+<dd><p>Returns possible overhang prefixes for one part.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.choose_pbs">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">choose_pbs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pegPAM</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_tm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">17</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.choose_pbs" title="Link to this definition"></a></dt>
+<dd><p>Chooses a prime-editing PBS with Tm closest to the target temperature.</p>
+<p>Candidate PBS lengths default to 8-17 nt. The default target Tm is 30 C,
+matching the experimentally favored PBS Tm region.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -382,12 +456,12 @@ spacer/scaffold annotations.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="engine.golden_gate_optimization">
-<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">golden_gate_optimization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">free_overhangsets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poltype_opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ptg'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.golden_gate_optimization" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">golden_gate_optimization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">free_overhangsets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poltype_opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ptg'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enzm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bsai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bb_linkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['tgcc',</span> <span class="pre">'gttt']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.golden_gate_optimization" title="Link to this definition"></a></dt>
 <dd><p>Finds linkers from optimal linker sets in a provided parts list</p>
-<p>In <code class="docutils literal notranslate"><span class="pre">tigRNA</span></code> mode, the optimizer uses only spacer B from recognized
-TasA/TasH mature tigRNAs as the source region for internal Golden Gate
-overhangs. This avoids placing variable overhangs in fixed edge or loop
-repeat scaffold sequence.</p>
+<p>In <code class="docutils literal notranslate"><span class="pre">tigRNA</span></code> mode, the optimizer uses spacer A or spacer B from recognized
+TasA/TasH tigRNAs as the source region for internal Golden Gate overhangs.
+This avoids placing variable overhangs in fixed edge or loop repeat
+scaffold sequence while giving the linker search more flexibility.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -404,6 +478,20 @@ one of ‘ptg’, ‘ca’ or ‘tigRNA’, defaults to ‘ptg’</p></li>
 <dd class="field-odd"><p>tuple</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.improve_overhang_combination_tms">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">improve_overhang_combination_tms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poltype_opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ptg'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enzm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bsai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bb_linkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['tgcc',</span> <span class="pre">'gttt']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_overhangs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.improve_overhang_combination_tms" title="Link to this definition"></a></dt>
+<dd><p>Locally improves a valid overhang combination by swapping weak junctions.</p>
+<p>This keeps runtime bounded for large Tas arrays while still allowing later
+spacer A/B choices to rescue low-Tm oligo-extension fragments.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.junction_candidate_prefixes">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">junction_candidate_prefixes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poltype_opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_overhangs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.junction_candidate_prefixes" title="Link to this definition"></a></dt>
+<dd><p>Returns rescue overhang prefixes for one internal junction.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -436,10 +524,10 @@ one of ‘ptg’, ‘ca’ or ‘tigRNA’, defaults to ‘ptg’</p></li>
 <dt class="sig sig-object py" id="engine.make_tas_candidate">
 <span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">make_tas_candidate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strand</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'provided'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.make_tas_candidate" title="Link to this definition"></a></dt>
 <dd><p>Builds one mature tigRNA candidate from one target window.</p>
-<p>TasA windows are 18 bp and are split into two 9 bp programmable spacers.
-TasH windows are 16 bp and are split into two 8 bp programmable spacers.
-Spacer A is reverse-complemented and spacer B is kept in the provided
-orientation before both are embedded in the mature tigRNA scaffold.</p>
+<p>Target windows are split into two programmable spacers. TasA keeps the
+previous target-window convention where spacer A is reverse-complemented.
+TasH uses multiplexing inputs where spacer A is embedded as provided and
+spacer B is reverse-complemented from the second half of the target window.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -461,9 +549,39 @@ GC content, score and PTG transfer string</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="engine.overhang_combination_overlap_tms">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">overhang_combination_overlap_tms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poltype_opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ptg'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_ann_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enzm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bsai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bb_linkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['tgcc',</span> <span class="pre">'gttt']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.overhang_combination_overlap_tms" title="Link to this definition"></a></dt>
+<dd><p>Estimates fill-in overlap Tm values produced by an internal overhang choice.</p>
+<p>CA and tigRNA oligo-extension fragments are short enough that the exact split
+position strongly affects the overlap shared by adjacent oligos. This helper
+scores a candidate combination before primers are committed.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.overhang_combination_score">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">overhang_combination_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poltype_opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ptg'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enzm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bsai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bb_linkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['tgcc',</span> <span class="pre">'gttt']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.overhang_combination_score" title="Link to this definition"></a></dt>
+<dd><p>Returns a sortable score for a candidate overhang combination.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.pbs_tm">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">pbs_tm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.pbs_tm" title="Link to this definition"></a></dt>
+<dd><p>Calculates PBS melting temperature using the nearest-neighbor model used
+elsewhere in PolyGEN.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.pegRNA_pbs_length">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">pegRNA_pbs_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pegRNA_sequence</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.pegRNA_pbs_length" title="Link to this definition"></a></dt>
+<dd><p>Infers PBS length from the pegRNA suffix when explicit metadata is missing.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="engine.pegbldr">
 <span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">pegbldr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'PE2'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.pegbldr" title="Link to this definition"></a></dt>
 <dd><p>Builds the necesary pegRNA and gRNA to accurately introduce a point mutation using the prime editor system.</p>
+<p>PBS length is selected from 8-17 nt by choosing the PBS whose melting
+temperature is closest to 30 C.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -500,9 +618,8 @@ from overlapping oligo pairs.</p>
 <dt class="sig sig-object py" id="engine.primer_construct_match">
 <span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">primer_construct_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">primer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">polycistron_sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enzm_seq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strand</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.primer_construct_match" title="Link to this definition"></a></dt>
 <dd><p>Returns the primer segment that matches the final assembled polycistron.</p>
-<p>The Type IIS recognition site and the 4 bp cloning overhang are excluded
-before matching. The returned coordinates therefore annotate only the
-template/extension sequence that is present in the GenBank construct.</p>
+<p>The Type IIS recognition site is excluded before matching. The 4 bp Golden
+Gate overhang is retained because it matches the final GenBank construct.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -549,6 +666,24 @@ reverse oligo sequence.</p>
 <dd class="field-odd"><p>float</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.ptg_seq_matches_for_overhangs">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">ptg_seq_matches_for_overhangs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">golden_gate_overhangs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.ptg_seq_matches_for_overhangs" title="Link to this definition"></a></dt>
+<dd><p>Returns possible Cas9/gRNA PTG overhang prefixes for each junction.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.ptg_subset_rescue_allowed">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">ptg_subset_rescue_allowed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.ptg_subset_rescue_allowed" title="Link to this definition"></a></dt>
+<dd><p>Returns whether PTG subset rescue can be used without prime editing.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.rescue_dropped_overhangs">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">rescue_dropped_overhangs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">partial_comb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropped_indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">used_overhangs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_overhangs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poltype_opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enzm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bsai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bb_linkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['tgcc',</span> <span class="pre">'gttt']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.rescue_dropped_overhangs" title="Link to this definition"></a></dt>
+<dd><p>Fills dropped junctions with curated rescue overhangs.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -616,13 +751,29 @@ Tm of the shared forward/reverse oligo overlap used for polymerase fill-in.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="engine.sequence_overlap_tm">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">sequence_overlap_tm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq_b</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.sequence_overlap_tm" title="Link to this definition"></a></dt>
+<dd><p>Calculates Tm for the longest shared sequence between two same-strand oligo cores.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.subset_rescue_optimization">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">subset_rescue_optimization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">free_overhangsets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rescue_overhangs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poltype_opt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enzm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bsai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bb_linkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['tgcc',</span> <span class="pre">'gttt']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.subset_rescue_optimization" title="Link to this definition"></a></dt>
+<dd><p>Finds a mostly optimal overhang set by dropping difficult junctions.</p>
+<p>The kept junctions must come from one validated optimal overhang collection.
+Dropped junctions are filled from the curated rescue pool and can be flagged
+individually in the output.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="engine.tas_guide_design">
 <span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">tas_guide_design</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'TasH'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_5</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_3</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_guides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_gc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_gc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">75</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exact_spacer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.tas_guide_design" title="Link to this definition"></a></dt>
 <dd><p>Designs programmable split-spacer tigRNAs for TIGR-Tas systems.</p>
 <p>The TIGR-Tas papers describe mature tigRNAs as edge-repeat fragment,
 spacer A, loop repeat, spacer B, edge-repeat fragment. TasA/FpTIGR uses
-two 9 nt spacers, and TasH/SpTIGR uses two 8 nt spacers. No PAM/TAM is
-required, so this scans all possible target windows on both orientations.</p>
+two 9 nt spacers, while TasH multiplexing uses two 8 nt spacers. No
+PAM/TAM is required, so this scans all possible target windows on both
+orientations.</p>
 <p>When <code class="docutils literal notranslate"><span class="pre">exact_spacer</span></code> is provided, it is interpreted as one or more exact
 target windows instead of scanning the longer target sequence. Entries may
 be separated by whitespace, commas, semicolons or vertical bars. Exact
@@ -651,13 +802,19 @@ target windows must be 18 bp for TasA and 16 bp for TasH.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="engine.tigRNA_seq_matches_for_overhangs">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">tigRNA_seq_matches_for_overhangs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">golden_gate_overhangs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.tigRNA_seq_matches_for_overhangs" title="Link to this definition"></a></dt>
+<dd><p>Returns possible tigRNA overhang prefixes for each internal junction.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="engine.tigRNA_spacer_ranges">
 <span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">tigRNA_spacer_ranges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.tigRNA_spacer_ranges" title="Link to this definition"></a></dt>
 <dd><p>Returns programmable spacer coordinate ranges for a mature tigRNA.</p>
 <p>For recognized TasA/TasH scaffolds, the returned list contains spacer A and
-spacer B ranges. Golden Gate optimization uses the spacer B range as the
-allowed source for internal tigRNA overhangs. For unknown scaffolds, the
-whole sequence is returned as one fallback range.</p>
+spacer B ranges. Golden Gate optimization can use either programmable
+spacer as the source for internal tigRNA overhangs. For unknown scaffolds,
+the whole sequence is returned as one fallback range.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>sequence</strong> (<em>str</em>) – Mature tigRNA DNA sequence</p>
@@ -669,6 +826,12 @@ whole sequence is returned as one fallback range.</p>
 <dd class="field-odd"><p>list</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="engine.tigRNA_subset_rescue_optimization">
+<span class="sig-prename descclassname"><span class="pre">engine.</span></span><span class="sig-name descname"><span class="pre">tigRNA_subset_rescue_optimization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parts_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">free_overhangsets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rescue_overhangs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enzm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bsai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bb_linkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['tgcc',</span> <span class="pre">'gttt']</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#engine.tigRNA_subset_rescue_optimization" title="Link to this definition"></a></dt>
+<dd><p>Compatibility wrapper for tigRNA subset rescue.</p>
 </dd></dl>
 
 </section>

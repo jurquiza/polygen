@@ -269,6 +269,9 @@ TIGRNA_MIN_SPLIT_LEN = 12
 MIN_FILL_IN_OVERLAP_TM = 45
 TIGRNA_MIN_OLIGO_CORE_LEN = 30
 TIGRNA_MAX_OLIGO_CORE_LEN = 60
+TYPEIIS_TEMPLATES = ['gaggtctcg', 'cgagacctc', 'tgcgtctca', 'tgagacgca',
+                     'ctgcgatggagtatgtta', 'taacatactccatcgcag',
+                     'ttgaagactt', 'aagtcttcaa']
 TAS_SYSTEMS = {
     'TasA': {
         'spacer_len': 9,
@@ -572,13 +575,23 @@ def longest_common_substring(seq_a, seq_b):
                 best = seq_a[a:a+n]
     return best
 
+def strip_typeiis_template_prefix(oligo):
+    '''Removes a known Type IIS template prefix from an oligo when present.'''
+
+    oligo = oligo.lower()
+    for template in sorted(TYPEIIS_TEMPLATES, key=len, reverse=True):
+        if oligo.startswith(template):
+            return oligo[len(template):]
+    return oligo
+
 def primer_pair_overlap(forward_primer, reverse_primer):
     '''
     Finds the polymerase-fill overlap shared by a forward/reverse oligo pair.
 
-    The reverse primer is reverse-complemented before comparison, so the result
-    is the sequence that can anneal between both oligos and be filled in by
-    polymerase.
+    The reverse primer is reverse-complemented before comparison. The returned
+    sequence must be the terminal overlap used for polymerase fill-in: a suffix
+    of the forward oligo and a prefix of the reverse oligo template. Known Type
+    IIS template prefixes are ignored before the comparison.
     
     :param forward_primer: Forward oligo sequence
     :type forward_primer: str
@@ -588,7 +601,13 @@ def primer_pair_overlap(forward_primer, reverse_primer):
     :rtype: str
     '''
 
-    return longest_common_substring(forward_primer.lower(), reverse_complement(reverse_primer).lower())
+    forward = strip_typeiis_template_prefix(forward_primer)
+    reverse_template = reverse_complement(strip_typeiis_template_prefix(reverse_primer))
+    max_len = min(len(forward), len(reverse_template))
+    for length in range(max_len, 0, -1):
+        if forward[-length:] == reverse_template[:length]:
+            return forward[-length:]
+    return ''
 
 def primer_pair_overlap_tm(forward_primer, reverse_primer):
     '''
@@ -659,6 +678,42 @@ def balanced_fragment_primers(fragment_sequence, enzm_pair, min_tm=MIN_FILL_IN_O
     forward = left_enz + core[:min_len]
     reverse = reverse_complement(core[len(core)-min_len:] + right_enz)
     return forward, reverse
+
+
+def oligo_fragment_mismatches(polycistron):
+    '''
+    Validates that every reported oligo matches the fragment it is meant to build.
+
+    Forward oligos must be an exact prefix of the fragment sequence stored on
+    the corresponding part. Reverse oligos are reverse-complemented and must be
+    an exact suffix of that same fragment. This catches accidental extra or
+    missing nucleotides in primer generation across PTG, prime editing, CA and
+    tigRNA assemblies.
+    '''
+
+    mismatches = []
+    for part in getattr(polycistron, 'parts', []):
+        fragment = part.sequence.lower()
+        forward = part.primer_forward.lower()
+        reverse_template = reverse_complement(part.primer_reverse.lower())
+        if forward and not fragment.startswith(forward):
+            mismatches.append({'part': part.name,
+                               'primer': 'forward',
+                               'expected_fragment_prefix': fragment[:len(forward)],
+                               'oligo_template': forward})
+        if reverse_template and not fragment.endswith(reverse_template):
+            mismatches.append({'part': part.name,
+                               'primer': 'reverse',
+                               'expected_fragment_suffix': fragment[-len(reverse_template):],
+                               'oligo_template': reverse_template})
+        overlap = primer_pair_overlap(part.primer_forward, part.primer_reverse)
+        if (getattr(polycistron, 'poltype', None) in ['ca', 'tigRNA'] and
+                part.primer_forward and part.primer_reverse and overlap == ''):
+            mismatches.append({'part': part.name,
+                               'primer': 'pair',
+                               'expected_terminal_overlap': 'non-empty suffix/prefix overlap',
+                               'oligo_template': ''})
+    return mismatches
 
 
 def sequence_overlap_tm(seq_a, seq_b):
@@ -1045,6 +1100,39 @@ def primer_construct_match(primer, polycistron_sequence, enzm_seq, strand=1):
                 return strt, strt + length
     return None
 
+def primer_part_match(part, part_index, part_count, primer, enzm_seq, strand=1):
+    '''
+    Returns deterministic construct coordinates for a primer on one fragment.
+
+    Repetitive Tas arrays can contain the same short sequence more than once.
+    This maps each primer to the local fragment it was designed from instead of
+    searching the whole construct for the longest repeated match.
+    '''
+
+    if getattr(part, 'localisation', None) in [None, []]:
+        return None
+    left_enz_len = len(enzm_seq)
+    right_enz_len = len(enzm_seq)
+    seq_start = left_enz_len
+    seq_end = len(part.sequence) - right_enz_len
+    construct_start = part.localisation[0] + (left_enz_len if part_index == 0 else 0)
+    construct_end = part.localisation[1] - (right_enz_len if part_index == part_count - 1 else 0)
+    if seq_end < seq_start or construct_end < construct_start:
+        return None
+
+    construct_segment = part.sequence[seq_start:seq_end].lower()
+    primer_template = primer[len(enzm_seq):].lower()
+    if strand == -1:
+        primer_template = reverse_complement(primer_template)
+
+    if strand == 1:
+        if not construct_segment.startswith(primer_template):
+            return None
+        return construct_start, construct_start + len(primer_template)
+    if not construct_segment.endswith(primer_template):
+        return None
+    return construct_end - len(primer_template), construct_end
+
 def tas_guide_design(sequence, system='TasH', edge_5=None, loop=None, edge_3=None, max_guides=20, min_gc=25, max_gc=75, exact_spacer=None):
     '''
     Designs programmable split-spacer tigRNAs for TIGR-Tas systems.
@@ -1360,6 +1448,7 @@ def scarless_gg(parts_list, tm_range=[55,65], max_ann_len=30, bb_linkers=['tgcc'
     polycistron.overhang_warning = ''
     polycistron.selected_overhangs = []
     polycistron.overhang_statuses = []
+    polycistron.poltype = poltype
 
     
     ## Go through parts and write all known annotations into list   
@@ -2196,7 +2285,9 @@ def annotatePrimers(polycistron, oligo_prefix='o', oligo_index='0', staticBorder
     for c,part in enumerate(polycistron.parts):
         for primer,oligo,strand,enzm_seq in [(part.primer_forward, polycistron.oligos[2*c][0], 1, enzms[enzm][0]),
                                              (part.primer_reverse, polycistron.oligos[2*c+1][0], -1, enzms[enzm][1])]:
-            match = primer_construct_match(primer, polycistron.sequence, enzm_seq, strand)
+            match = primer_part_match(part, c, len(polycistron.parts), primer, enzm_seq, strand)
+            if match is None:
+                match = primer_construct_match(primer, polycistron.sequence, enzm_seq, strand)
             if match is not None:
                 strt,end = match
                 direction = 'forward' if strand == 1 else 'reverse'
