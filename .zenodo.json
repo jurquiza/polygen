@@ -1,0 +1,13 @@
+{
+  "title": "PolyGEN: computer-aided design for multiplexed small-RNA arrays",
+  "description": "Software for designing and deploying multiplexed small-RNA arrays, accompanying Urquiza-García et al.",
+  "upload_type": "software",
+  "license": "mit",
+  "creators": [
+    {"name": "Urquiza-García, Uriel",
+     "affiliation": "Heinrich Heine University Düsseldorf",
+     "orcid": "0000-0002-7975-5013"},
+    {"name": "Surname, Firstname", "affiliation": "…", "orcid": "…"}
+  ],
+  "keywords": ["CRISPR", "multiplexing", "Golden Gate", "synthetic biology", "guide RNA"]
+}
