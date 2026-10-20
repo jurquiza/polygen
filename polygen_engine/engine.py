@@ -8,11 +8,8 @@ import json
 import copy
 import os
 from Bio.SeqUtils import MeltingTemp as mt
-from Bio import SeqIO
-from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 from Bio.Seq import Seq
-from Bio.Alphabet import IUPAC
 
 
 class InvalidUsage(Exception):
